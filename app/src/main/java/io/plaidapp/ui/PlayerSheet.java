@@ -20,12 +20,10 @@ import android.app.Activity;
 import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.AnimatedVectorDrawable;
 import android.os.Bundle;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -211,19 +209,13 @@ public class PlayerSheet extends Activity {
     private void showClose() {
         if (dismissState == DISMISS_CLOSE) return;
         dismissState = DISMISS_CLOSE;
-        final AnimatedVectorDrawable downToClose = (AnimatedVectorDrawable)
-                ContextCompat.getDrawable(this, R.drawable.avd_down_to_close);
-        close.setImageDrawable(downToClose);
-        downToClose.start();
+        close.setImageState(new int[] {android.R.attr.state_expanded}, true);
     }
 
     private void showDown() {
         if (dismissState == DISMISS_DOWN) return;
         dismissState = DISMISS_DOWN;
-        final AnimatedVectorDrawable closeToDown = (AnimatedVectorDrawable)
-                ContextCompat.getDrawable(this, R.drawable.avd_close_to_down);
-        close.setImageDrawable(closeToDown);
-        closeToDown.start();
+        close.setImageState(new int[] {-android.R.attr.state_expanded}, true);
     }
 
     @OnClick({ R.id.bottom_sheet, R.id.close })
@@ -263,20 +255,17 @@ public class PlayerSheet extends Activity {
         private PlayerViewHolder createPlayerViewHolder(ViewGroup parent) {
             final PlayerViewHolder holder = new PlayerViewHolder(
                     layoutInflater.inflate(R.layout.player_item, parent, false));
-            holder.itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    final User user = items.get(holder.getAdapterPosition()).getPlayer();
-                    final Intent player = new Intent(PlayerSheet.this, PlayerActivity.class);
-                    player.putExtra(PlayerActivity.EXTRA_PLAYER, user);
-                    final ActivityOptions options =
-                            ActivityOptions.makeSceneTransitionAnimation(PlayerSheet.this,
-                                    Pair.create((View) holder.playerAvatar,
-                                            getString(R.string.transition_player_avatar)),
-                                    Pair.create(holder.itemView,
-                                            getString(R.string.transition_player_background)));
-                    startActivity(player, options.toBundle());
-                }
+            holder.itemView.setOnClickListener(v -> {
+                final User user = items.get(holder.getAdapterPosition()).getPlayer();
+                final Intent player = new Intent(PlayerSheet.this, PlayerActivity.class);
+                player.putExtra(PlayerActivity.EXTRA_PLAYER, user);
+                final ActivityOptions options =
+                        ActivityOptions.makeSceneTransitionAnimation(PlayerSheet.this,
+                                Pair.create((View) holder.playerAvatar,
+                                        getString(R.string.transition_player_avatar)),
+                                Pair.create(holder.itemView,
+                                        getString(R.string.transition_player_background)));
+                startActivity(player, options.toBundle());
             });
             return holder;
         }

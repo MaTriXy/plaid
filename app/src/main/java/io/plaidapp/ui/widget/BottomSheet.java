@@ -20,6 +20,7 @@ import android.content.Context;
 import android.support.animation.DynamicAnimation;
 import android.support.animation.SpringAnimation;
 import android.support.animation.SpringForce;
+import android.support.annotation.NonNull;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.ViewDragHelper;
 import android.util.AttributeSet;
@@ -242,23 +243,15 @@ public class BottomSheet extends FrameLayout {
         anim.getSpring()
                 .setStiffness(SETTLE_STIFFNESS)
                 .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY);
-        anim.addEndListener(new DynamicAnimation.OnAnimationEndListener() {
-            @Override
-            public void onAnimationEnd(DynamicAnimation animation, boolean canceled, float value, float velocity) {
-                dispatchPositionChangedCallback();
-                if (dismissing) {
-                    dispatchDismissCallback();
-                }
-                settling = false;
+        anim.addEndListener((animation, canceled, value, velocity) -> {
+            dispatchPositionChangedCallback();
+            if (dismissing) {
+                dispatchDismissCallback();
             }
+            settling = false;
         });
         if (callbacks != null && !callbacks.isEmpty()) {
-            anim.addUpdateListener(new DynamicAnimation.OnAnimationUpdateListener() {
-                @Override
-                public void onAnimationUpdate(DynamicAnimation animation, float value, float velocity) {
-                    dispatchPositionChangedCallback();
-                }
-            });
+            anim.addUpdateListener((animation, value, velocity) -> dispatchPositionChangedCallback());
         }
         anim.start();
     }
@@ -266,34 +259,34 @@ public class BottomSheet extends FrameLayout {
     private final ViewDragHelper.Callback dragHelperCallbacks = new ViewDragHelper.Callback() {
 
         @Override
-        public boolean tryCaptureView(View child, int pointerId) {
+        public boolean tryCaptureView(@NonNull View child, int pointerId) {
             return child == sheet;
         }
 
         @Override
-        public int clampViewPositionVertical(View child, int top, int dy) {
+        public int clampViewPositionVertical(@NonNull View child, int top, int dy) {
             return Math.min(Math.max(top, sheetExpandedTop), sheetBottom);
         }
 
         @Override
-        public int clampViewPositionHorizontal(View child, int left, int dx) {
+        public int clampViewPositionHorizontal(@NonNull View child, int left, int dx) {
             return sheet.getLeft();
         }
 
         @Override
-        public int getViewVerticalDragRange(View child) {
+        public int getViewVerticalDragRange(@NonNull View child) {
             return sheetBottom - sheetExpandedTop;
         }
 
         @Override
-        public void onViewPositionChanged(View child, int left, int top, int dx, int dy) {
+        public void onViewPositionChanged(@NonNull View child, int left, int top, int dx, int dy) {
             // notify the offset helper that the sheets offsets have been changed externally
             sheetOffsetHelper.resyncOffsets();
             dispatchPositionChangedCallback();
         }
 
         @Override
-        public void onViewReleased(View releasedChild, float velocityX, float velocityY) {
+        public void onViewReleased(@NonNull View releasedChild, float velocityX, float velocityY) {
             // dismiss on downward fling, otherwise settle back to expanded position
             final boolean dismiss = velocityY >= SCALED_MIN_FLING_DISMISS_VELOCITY;
             animateSettle(dismiss ? dismissOffset : 0, velocityY);

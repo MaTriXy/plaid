@@ -15,10 +15,25 @@
   limitations under the License.
   -->
 
-<resources>
-    <declare-styleable name="DynamicTextView">
-        <attr name="snapToMaterialScale" format="boolean|reference" />
-        <attr name="minTextSize" format="dimension|reference" />
-        <attr name="maxTextSize" format="dimension|reference" />
-    </declare-styleable>
-</resources>
+<animated-selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <item
+    android:id="@+id/close"
+    android:state_expanded="true"
+    android:drawable="@drawable/ic_close_down" />
+
+  <item
+    android:id="@+id/down"
+    android:drawable="@drawable/ic_down" />
+
+  <transition
+    android:fromId="@id/down"
+    android:toId="@id/close"
+    android:drawable="@drawable/avd_down_to_close" />
+
+  <transition
+    android:fromId="@id/close"
+    android:toId="@id/down"
+    android:drawable="@drawable/avd_close_to_down" />
+
+</animated-selector>

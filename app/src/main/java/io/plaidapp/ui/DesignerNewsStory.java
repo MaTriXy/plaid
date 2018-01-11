@@ -73,7 +73,6 @@ import butterknife.BindInt;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import in.uncod.android.bypass.Bypass;
-import in.uncod.android.bypass.style.ImageLoadingSpan;
 import io.plaidapp.R;
 import io.plaidapp.data.api.designernews.UpvoteStoryService;
 import io.plaidapp.data.api.designernews.model.Comment;
@@ -162,7 +161,7 @@ public class DesignerNewsStory extends Activity {
         if (collapsingToolbar != null) { // narrow device: collapsing toolbar
             collapsingToolbar.addOnLayoutChangeListener(titlebarLayout);
             collapsingToolbar.setTitle(story.title);
-            final Toolbar toolbar = (Toolbar) findViewById(R.id.story_toolbar);
+            final Toolbar toolbar = findViewById(R.id.story_toolbar);
             toolbar.setNavigationOnClickListener(backClick);
             commentsList.addOnScrollListener(headerScrollListener);
 
@@ -181,7 +180,7 @@ public class DesignerNewsStory extends Activity {
             });
 
         } else { // w600dp configuration: content card scrolls over title bar
-            final TextView title = (TextView) findViewById(R.id.story_title);
+            final TextView title = findViewById(R.id.story_title);
             title.setText(story.title);
             findViewById(R.id.back).setOnClickListener(backClick);
         }
@@ -198,7 +197,7 @@ public class DesignerNewsStory extends Activity {
 
         } else {
             commentsAdapter = new DesignerNewsCommentsAdapter(
-                    header, new ArrayList<Comment>(0), enterCommentView);
+                    header, new ArrayList<>(0), enterCommentView);
             commentsList.setAdapter(commentsAdapter);
         }
         customTab = new CustomTabActivityHelper();
@@ -292,12 +291,7 @@ public class DesignerNewsStory extends Activity {
         }
     };
 
-    private final View.OnClickListener backClick = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            finishAfterTransition();
-        }
-    };
+    private final View.OnClickListener backClick = view -> finishAfterTransition();
 
     private void updateScrollDependentUi() {
         // feed scroll events to the header
@@ -448,17 +442,12 @@ public class DesignerNewsStory extends Activity {
         final TextView storyComment = header.findViewById(R.id.story_comment);
         if (!TextUtils.isEmpty(story.comment)) {
             HtmlUtils.parseMarkdownAndSetText(storyComment, story.comment, markdown,
-                    new Bypass.LoadImageCallback() {
-                @Override
-                public void loadImage(String src, ImageLoadingSpan loadingSpan) {
-                    GlideApp.with(DesignerNewsStory.this)
+                    (src, loadingSpan) -> GlideApp.with(DesignerNewsStory.this)
                             .asBitmap()
                             .load(src)
                             .transition(BitmapTransitionOptions.withCrossFade())
                             .diskCacheStrategy(DiskCacheStrategy.ALL)
-                            .into(new ImageSpanTarget(storyComment, loadingSpan));
-                }
-            });
+                            .into(new ImageSpanTarget(storyComment, loadingSpan)));
         } else {
             storyComment.setVisibility(View.GONE);
         }
@@ -466,24 +455,16 @@ public class DesignerNewsStory extends Activity {
         upvoteStory = header.findViewById(R.id.story_vote_action);
         upvoteStory.setText(getResources().getQuantityString(R.plurals.upvotes, story.vote_count,
                 NumberFormat.getInstance().format(story.vote_count)));
-        upvoteStory.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(final View v) {
-                upvoteStory();
-            }
-        });
+        upvoteStory.setOnClickListener(v -> upvoteStory());
 
         final TextView share = header.findViewById(R.id.story_share_action);
-        share.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((AnimatedVectorDrawable) share.getCompoundDrawables()[1]).start();
-                startActivity(ShareCompat.IntentBuilder.from(DesignerNewsStory.this)
-                        .setText(story.url)
-                        .setType("text/plain")
-                        .setSubject(story.title)
-                        .getIntent());
-            }
+        share.setOnClickListener(v -> {
+            ((AnimatedVectorDrawable) share.getCompoundDrawables()[1]).start();
+            startActivity(ShareCompat.IntentBuilder.from(DesignerNewsStory.this)
+                    .setText(story.url)
+                    .setType("text/plain")
+                    .setSubject(story.title)
+                    .getIntent());
         });
 
         TextView storyPosterTime = header.findViewById(R.id.story_poster_time);
@@ -514,39 +495,36 @@ public class DesignerNewsStory extends Activity {
     private View setupCommentField() {
         View enterCommentView = getLayoutInflater()
                 .inflate(R.layout.designer_news_enter_comment, commentsList, false);
-        enterComment = (EditText) enterCommentView.findViewById(R.id.comment);
-        postComment = (ImageButton) enterCommentView.findViewById(R.id.post_comment);
-        postComment.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (designerNewsPrefs.isLoggedIn()) {
-                    if (TextUtils.isEmpty(enterComment.getText())) return;
-                    enterComment.setEnabled(false);
-                    postComment.setEnabled(false);
-                    final Call<Comment> comment = designerNewsPrefs.getApi()
-                            .comment(story.id, enterComment.getText().toString());
-                    comment.enqueue(new Callback<Comment>() {
-                        @Override
-                        public void onResponse(Call<Comment> call, Response<Comment> response) {
-                            enterComment.getText().clear();
-                            enterComment.setEnabled(true);
-                            postComment.setEnabled(true);
-                            commentsAdapter.addComment(response.body());
-                        }
+        enterComment = enterCommentView.findViewById(R.id.comment);
+        postComment = enterCommentView.findViewById(R.id.post_comment);
+        postComment.setOnClickListener(v -> {
+            if (designerNewsPrefs.isLoggedIn()) {
+                if (TextUtils.isEmpty(enterComment.getText())) return;
+                enterComment.setEnabled(false);
+                postComment.setEnabled(false);
+                final Call<Comment> comment = designerNewsPrefs.getApi()
+                        .comment(story.id, enterComment.getText().toString());
+                comment.enqueue(new Callback<Comment>() {
+                    @Override
+                    public void onResponse(Call<Comment> call, Response<Comment> response) {
+                        enterComment.getText().clear();
+                        enterComment.setEnabled(true);
+                        postComment.setEnabled(true);
+                        commentsAdapter.addComment(response.body());
+                    }
 
-                        @Override
-                        public void onFailure(Call<Comment> call, Throwable t) {
-                            Toast.makeText(getApplicationContext(),
-                                    "Failed to post comment :(", Toast.LENGTH_SHORT).show();
-                            enterComment.setEnabled(true);
-                            postComment.setEnabled(true);
-                        }
-                    });
-                } else {
-                    needsLogin(postComment, 0);
-                }
-                enterComment.clearFocus();
+                    @Override
+                    public void onFailure(Call<Comment> call, Throwable t) {
+                        Toast.makeText(getApplicationContext(),
+                                "Failed to post comment :(", Toast.LENGTH_SHORT).show();
+                        enterComment.setEnabled(true);
+                        postComment.setEnabled(true);
+                    }
+                });
+            } else {
+                needsLogin(postComment, 0);
             }
+            enterComment.clearFocus();
         });
         enterComment.setOnFocusChangeListener(enterCommentFocus);
         return enterCommentView;
@@ -766,19 +744,16 @@ public class DesignerNewsStory extends Activity {
         private CommentHolder createCommentHolder(ViewGroup parent) {
             final CommentHolder holder = new CommentHolder(
                     getLayoutInflater().inflate(R.layout.designer_news_comment, parent, false));
-            holder.itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    final boolean collapsingSelf =
-                            expandedCommentPosition == holder.getAdapterPosition();
-                    collapseExpandedComment();
-                    if (collapsingSelf) return;
+            holder.itemView.setOnClickListener(v -> {
+                final boolean collapsingSelf =
+                        expandedCommentPosition == holder.getAdapterPosition();
+                collapseExpandedComment();
+                if (collapsingSelf) return;
 
-                    // show reply below this
-                    expandedCommentPosition = holder.getAdapterPosition();
-                    notifyItemInserted(expandedCommentPosition + 1);
-                    notifyItemChanged(expandedCommentPosition, CommentAnimator.EXPAND_COMMENT);
-                }
+                // show reply below this
+                expandedCommentPosition = holder.getAdapterPosition();
+                notifyItemInserted(expandedCommentPosition + 1);
+                notifyItemChanged(expandedCommentPosition, CommentAnimator.EXPAND_COMMENT);
             });
             holder.threadDepth.setImageDrawable(
                     new ThreadedCommentDrawable(threadWidth, threadGap));
@@ -804,16 +779,11 @@ public class DesignerNewsStory extends Activity {
 
                 final Comment comment = getComment(holder.getAdapterPosition());
                 HtmlUtils.parseMarkdownAndSetText(holder.comment, comment.body, markdown,
-                        new Bypass.LoadImageCallback() {
-                    @Override
-                    public void loadImage(String src, ImageLoadingSpan loadingSpan) {
-                        GlideApp.with(DesignerNewsStory.this)
+                        (src, loadingSpan) -> GlideApp.with(DesignerNewsStory.this)
                                 .asBitmap()
                                 .load(src)
                                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                                .into(new ImageSpanTarget(holder.comment, loadingSpan));
-                    }
-                });
+                                .into(new ImageSpanTarget(holder.comment, loadingSpan)));
                 if (comment.user_display_name != null) {
                     holder.author.setText(comment.user_display_name.toLowerCase());
                 }
@@ -856,151 +826,142 @@ public class DesignerNewsStory extends Activity {
             final CommentReplyHolder holder = new CommentReplyHolder(getLayoutInflater()
                     .inflate(R.layout.designer_news_comment_actions, parent, false));
 
-            holder.commentVotes.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (designerNewsPrefs.isLoggedIn()) {
-                        Comment comment = getComment(holder.getAdapterPosition());
-                        if (!holder.commentVotes.isActivated()) {
-                            final Call<Comment> upvoteComment =
-                                    designerNewsPrefs.getApi().upvoteComment(comment.id);
-                            upvoteComment.enqueue(new Callback<Comment>() {
-                                @Override
-                                public void onResponse(Call<Comment> call,
-                                                       Response<Comment> response) { }
-
-                                @Override
-                                public void onFailure(Call<Comment> call, Throwable t) { }
-                            });
-                            comment.upvoted = true;
-                            comment.vote_count++;
-                            holder.commentVotes.setText(String.valueOf(comment.vote_count));
-                            holder.commentVotes.setActivated(true);
-                        } else {
-                            comment.upvoted = false;
-                            comment.vote_count--;
-                            holder.commentVotes.setText(String.valueOf(comment.vote_count));
-                            holder.commentVotes.setActivated(false);
-                            // TODO actually delete upvote
-                        }
-                    } else {
-                        needsLogin(holder.commentVotes, 0);
-                    }
-                    holder.commentReply.clearFocus();
-                }
-            });
-
-            holder.postReply.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (designerNewsPrefs.isLoggedIn()) {
-                        if (TextUtils.isEmpty(holder.commentReply.getText())) return;
-                        final int inReplyToCommentPosition = holder.getAdapterPosition() - 1;
-                        final Comment replyingTo = getComment(inReplyToCommentPosition);
-                        collapseExpandedComment();
-
-                        // insert a locally created comment before actually
-                        // hitting the API for immediate response
-                        int replyDepth = replyingTo.depth + 1;
-                        final int newReplyPosition = commentsAdapter.addCommentReply(
-                                new Comment.Builder()
-                                        .setBody(holder.commentReply.getText().toString())
-                                        .setCreatedAt(new Date())
-                                        .setDepth(replyDepth)
-                                        .setUserId(designerNewsPrefs.getUserId())
-                                        .setUserDisplayName(designerNewsPrefs.getUserName())
-                                        .setUserPortraitUrl(designerNewsPrefs.getUserAvatar())
-                                        .build(),
-                                inReplyToCommentPosition);
-                        final Call<Comment> replyToComment = designerNewsPrefs.getApi()
-                                .replyToComment(replyingTo.id,
-                                        holder.commentReply.getText().toString());
-                        replyToComment.enqueue(new Callback<Comment>() {
+            holder.commentVotes.setOnClickListener(v -> {
+                if (designerNewsPrefs.isLoggedIn()) {
+                    Comment comment = getComment(holder.getAdapterPosition());
+                    if (!holder.commentVotes.isActivated()) {
+                        final Call<Comment> upvoteComment =
+                                designerNewsPrefs.getApi().upvoteComment(comment.id);
+                        upvoteComment.enqueue(new Callback<Comment>() {
                             @Override
-                            public void onResponse(Call<Comment> call, Response<Comment> response) {
-
-                            }
+                            public void onResponse(Call<Comment> call,
+                                                   Response<Comment> response) { }
 
                             @Override
-                            public void onFailure(Call<Comment> call, Throwable t) {
-                                Toast.makeText(getApplicationContext(),
-                                        "Failed to post comment :(", Toast.LENGTH_SHORT).show();
-                            }
+                            public void onFailure(Call<Comment> call, Throwable t) { }
                         });
-                        holder.commentReply.getText().clear();
-                        ImeUtils.hideIme(holder.commentReply);
-                        commentsList.scrollToPosition(newReplyPosition);
+                        comment.upvoted = true;
+                        comment.vote_count++;
+                        holder.commentVotes.setText(String.valueOf(comment.vote_count));
+                        holder.commentVotes.setActivated(true);
                     } else {
-                        needsLogin(holder.postReply, 0);
+                        comment.upvoted = false;
+                        comment.vote_count--;
+                        holder.commentVotes.setText(String.valueOf(comment.vote_count));
+                        holder.commentVotes.setActivated(false);
+                        // TODO actually delete upvote
                     }
-                    holder.commentReply.clearFocus();
+                } else {
+                    needsLogin(holder.commentVotes, 0);
                 }
+                holder.commentReply.clearFocus();
             });
 
-            holder.commentReply.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                @Override
-                public void onFocusChange(View v, boolean hasFocus) {
-                    replyToCommentFocused = hasFocus;
-                    final Interpolator interp = getFastOutSlowInInterpolator(holder
-                            .itemView.getContext());
-                    if (hasFocus) {
-                        holder.commentVotes.animate()
-                                .translationX(-holder.commentVotes.getWidth())
-                                .alpha(0f)
-                                .setDuration(200L)
-                                .setInterpolator(interp);
-                        holder.replyLabel.animate()
-                                .translationX(-holder.commentVotes.getWidth())
-                                .setDuration(200L)
-                                .setInterpolator(interp);
-                        holder.postReply.setVisibility(View.VISIBLE);
-                        holder.postReply.setAlpha(0f);
-                        holder.postReply.animate()
-                                .alpha(1f)
-                                .setDuration(200L)
-                                .setInterpolator(interp)
-                                .setListener(new AnimatorListenerAdapter() {
-                                    @Override
-                                    public void onAnimationStart(Animator animation) {
-                                        holder.itemView.setHasTransientState(true);
-                                    }
+            holder.postReply.setOnClickListener(v -> {
+                if (designerNewsPrefs.isLoggedIn()) {
+                    if (TextUtils.isEmpty(holder.commentReply.getText())) return;
+                    final int inReplyToCommentPosition = holder.getAdapterPosition() - 1;
+                    final Comment replyingTo = getComment(inReplyToCommentPosition);
+                    collapseExpandedComment();
 
-                                    @Override
-                                    public void onAnimationEnd(Animator animation) {
-                                        holder.itemView.setHasTransientState(false);
-                                    }
-                                });
-                        updateFabVisibility();
-                    } else {
-                        holder.commentVotes.animate()
-                                .translationX(0f)
-                                .alpha(1f)
-                                .setDuration(200L)
-                                .setInterpolator(interp);
-                        holder.replyLabel.animate()
-                                .translationX(0f)
-                                .setDuration(200L)
-                                .setInterpolator(interp);
-                        holder.postReply.animate()
-                                .alpha(0f)
-                                .setDuration(200L)
-                                .setInterpolator(interp)
-                                .setListener(new AnimatorListenerAdapter() {
-                                    @Override
-                                    public void onAnimationStart(Animator animation) {
-                                        holder.itemView.setHasTransientState(true);
-                                    }
+                    // insert a locally created comment before actually
+                    // hitting the API for immediate response
+                    int replyDepth = replyingTo.depth + 1;
+                    final int newReplyPosition = commentsAdapter.addCommentReply(
+                            new Comment.Builder()
+                                    .setBody(holder.commentReply.getText().toString())
+                                    .setCreatedAt(new Date())
+                                    .setDepth(replyDepth)
+                                    .setUserId(designerNewsPrefs.getUserId())
+                                    .setUserDisplayName(designerNewsPrefs.getUserName())
+                                    .setUserPortraitUrl(designerNewsPrefs.getUserAvatar())
+                                    .build(),
+                            inReplyToCommentPosition);
+                    final Call<Comment> replyToComment = designerNewsPrefs.getApi()
+                            .replyToComment(replyingTo.id,
+                                    holder.commentReply.getText().toString());
+                    replyToComment.enqueue(new Callback<Comment>() {
+                        @Override
+                        public void onResponse(Call<Comment> call, Response<Comment> response) {
 
-                                    @Override
-                                    public void onAnimationEnd(Animator animation) {
-                                        holder.postReply.setVisibility(View.INVISIBLE);
-                                        holder.itemView.setHasTransientState(true);
-                                    }
-                                });
-                        updateFabVisibility();
-                    }
-                    holder.postReply.setActivated(hasFocus);
+                        }
+
+                        @Override
+                        public void onFailure(Call<Comment> call, Throwable t) {
+                            Toast.makeText(getApplicationContext(),
+                                    "Failed to post comment :(", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    holder.commentReply.getText().clear();
+                    ImeUtils.hideIme(holder.commentReply);
+                    commentsList.scrollToPosition(newReplyPosition);
+                } else {
+                    needsLogin(holder.postReply, 0);
                 }
+                holder.commentReply.clearFocus();
+            });
+
+            holder.commentReply.setOnFocusChangeListener((v, hasFocus) -> {
+                replyToCommentFocused = hasFocus;
+                final Interpolator interp = getFastOutSlowInInterpolator(holder
+                        .itemView.getContext());
+                if (hasFocus) {
+                    holder.commentVotes.animate()
+                            .translationX(-holder.commentVotes.getWidth())
+                            .alpha(0f)
+                            .setDuration(200L)
+                            .setInterpolator(interp);
+                    holder.replyLabel.animate()
+                            .translationX(-holder.commentVotes.getWidth())
+                            .setDuration(200L)
+                            .setInterpolator(interp);
+                    holder.postReply.setVisibility(View.VISIBLE);
+                    holder.postReply.setAlpha(0f);
+                    holder.postReply.animate()
+                            .alpha(1f)
+                            .setDuration(200L)
+                            .setInterpolator(interp)
+                            .setListener(new AnimatorListenerAdapter() {
+                                @Override
+                                public void onAnimationStart(Animator animation) {
+                                    holder.itemView.setHasTransientState(true);
+                                }
+
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    holder.itemView.setHasTransientState(false);
+                                }
+                            });
+                    updateFabVisibility();
+                } else {
+                    holder.commentVotes.animate()
+                            .translationX(0f)
+                            .alpha(1f)
+                            .setDuration(200L)
+                            .setInterpolator(interp);
+                    holder.replyLabel.animate()
+                            .translationX(0f)
+                            .setDuration(200L)
+                            .setInterpolator(interp);
+                    holder.postReply.animate()
+                            .alpha(0f)
+                            .setDuration(200L)
+                            .setInterpolator(interp)
+                            .setListener(new AnimatorListenerAdapter() {
+                                @Override
+                                public void onAnimationStart(Animator animation) {
+                                    holder.itemView.setHasTransientState(true);
+                                }
+
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    holder.postReply.setVisibility(View.INVISIBLE);
+                                    holder.itemView.setHasTransientState(true);
+                                }
+                            });
+                    updateFabVisibility();
+                }
+                holder.postReply.setActivated(hasFocus);
             });
 
             return holder;
@@ -1073,16 +1034,16 @@ public class DesignerNewsStory extends Activity {
         public static final int COLLAPSE_COMMENT = 2;
 
         @Override
-        public boolean canReuseUpdatedViewHolder(RecyclerView.ViewHolder viewHolder) {
+        public boolean canReuseUpdatedViewHolder(@NonNull RecyclerView.ViewHolder viewHolder) {
             return true;
         }
 
         @NonNull
         @Override
-        public ItemHolderInfo recordPreLayoutInformation(RecyclerView.State state,
-                                                         RecyclerView.ViewHolder viewHolder,
+        public ItemHolderInfo recordPreLayoutInformation(@NonNull RecyclerView.State state,
+                                                         @NonNull RecyclerView.ViewHolder viewHolder,
                                                          int changeFlags,
-                                                         List<Object> payloads) {
+                                                         @NonNull List<Object> payloads) {
             CommentItemHolderInfo info = (CommentItemHolderInfo)
                     super.recordPreLayoutInformation(state, viewHolder, changeFlags, payloads);
             info.doExpand = payloads.contains(EXPAND_COMMENT);
@@ -1091,10 +1052,10 @@ public class DesignerNewsStory extends Activity {
         }
 
         @Override
-        public boolean animateChange(RecyclerView.ViewHolder oldHolder,
-                                     RecyclerView.ViewHolder newHolder,
-                                     ItemHolderInfo preInfo,
-                                     ItemHolderInfo postInfo) {
+        public boolean animateChange(@NonNull RecyclerView.ViewHolder oldHolder,
+                                     @NonNull RecyclerView.ViewHolder newHolder,
+                                     @NonNull ItemHolderInfo preInfo,
+                                     @NonNull ItemHolderInfo postInfo) {
             if (newHolder instanceof CommentHolder && preInfo instanceof CommentItemHolderInfo) {
                 final CommentHolder holder = (CommentHolder) newHolder;
                 final CommentItemHolderInfo info = (CommentItemHolderInfo) preInfo;
