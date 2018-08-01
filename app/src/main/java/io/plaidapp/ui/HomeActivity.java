@@ -1,17 +1,18 @@
 /*
- * Copyright 2015 Google Inc.
+ *   Copyright 2018 Google LLC
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
  */
 
 package io.plaidapp.ui;
@@ -26,7 +27,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
-import android.graphics.Typeface;
 import android.graphics.drawable.AnimatedVectorDrawable;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -42,13 +42,14 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.text.Annotation;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.SpannedString;
 import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
-import android.text.style.StyleSpan;
 import android.transition.TransitionManager;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -68,55 +69,49 @@ import android.widget.Toolbar;
 import com.bumptech.glide.integration.recyclerview.RecyclerViewPreloader;
 import com.bumptech.glide.util.ViewPreloadSizeProvider;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import butterknife.BindInt;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 import io.plaidapp.R;
-import io.plaidapp.data.DataManager;
-import io.plaidapp.data.PlaidItem;
-import io.plaidapp.data.Source;
-import io.plaidapp.data.api.designernews.PostStoryService;
-import io.plaidapp.data.api.designernews.model.Story;
-import io.plaidapp.data.api.dribbble.model.Shot;
-import io.plaidapp.data.pocket.PocketUtils;
-import io.plaidapp.data.prefs.DesignerNewsPrefs;
-import io.plaidapp.data.prefs.DribbblePrefs;
-import io.plaidapp.data.prefs.SourceManager;
+import io.plaidapp.core.data.DataManager;
+import io.plaidapp.core.data.PlaidItem;
+import io.plaidapp.core.data.Source;
+import io.plaidapp.core.dribbble.data.api.model.Shot;
+import io.plaidapp.core.data.pocket.PocketUtils;
+import io.plaidapp.core.data.prefs.SourceManager;
+import io.plaidapp.core.designernews.DesignerNewsPrefs;
+import io.plaidapp.core.designernews.data.poststory.PostStoryService;
+import io.plaidapp.core.designernews.data.stories.model.Story;
+import io.plaidapp.core.ui.FeedAdapter;
+import io.plaidapp.core.ui.FilterAdapter;
+import io.plaidapp.core.ui.HomeGridItemAnimator;
+import io.plaidapp.core.ui.recyclerview.InfiniteScrollListener;
+import io.plaidapp.core.util.Activities;
+import io.plaidapp.core.util.ActivityHelper;
+import io.plaidapp.core.util.AnimUtils;
+import io.plaidapp.core.util.DrawableUtils;
+import io.plaidapp.core.util.ViewUtils;
 import io.plaidapp.ui.recyclerview.FilterTouchHelperCallback;
 import io.plaidapp.ui.recyclerview.GridItemDividerDecoration;
-import io.plaidapp.ui.recyclerview.InfiniteScrollListener;
-import io.plaidapp.ui.transitions.FabTransform;
-import io.plaidapp.ui.transitions.MorphTransform;
-import io.plaidapp.util.AnimUtils;
-import io.plaidapp.util.DrawableUtils;
-import io.plaidapp.util.ViewUtils;
-
+import io.plaidapp.core.ui.transitions.FabTransform;
 
 public class HomeActivity extends Activity {
 
     private static final int RC_SEARCH = 0;
-    private static final int RC_AUTH_DRIBBBLE_FOLLOWING = 1;
-    private static final int RC_AUTH_DRIBBBLE_USER_LIKES = 2;
-    private static final int RC_AUTH_DRIBBBLE_USER_SHOTS = 3;
     private static final int RC_NEW_DESIGNER_NEWS_STORY = 4;
     private static final int RC_NEW_DESIGNER_NEWS_LOGIN = 5;
 
-    @BindView(R.id.drawer) DrawerLayout drawer;
-    @BindView(R.id.toolbar) Toolbar toolbar;
-    @BindView(R.id.grid) RecyclerView grid;
-    @BindView(R.id.fab) ImageButton fab;
-    @BindView(R.id.filters) RecyclerView filtersList;
-    @BindView(android.R.id.empty) ProgressBar loading;
-    @Nullable @BindView(R.id.no_connection) ImageView noConnection;
+    private DrawerLayout drawer;
+    private Toolbar toolbar;
+    private RecyclerView grid;
+    private ImageButton fab;
+    private RecyclerView filtersList;
+    private ProgressBar loading;
+    private @Nullable ImageView noConnection;
     ImageButton fabPosting;
     GridLayoutManager layoutManager;
-    @BindInt(R.integer.num_columns) int columns;
+    private int columns;
     boolean connected = true;
     private TextView noFiltersEmptyText;
     private boolean monitoringConnectivity = false;
@@ -126,13 +121,12 @@ public class HomeActivity extends Activity {
     FeedAdapter adapter;
     FilterAdapter filtersAdapter;
     private DesignerNewsPrefs designerNewsPrefs;
-    private DribbblePrefs dribbblePrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        ButterKnife.bind(this);
+        bindResources();
 
         drawer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -144,20 +138,8 @@ public class HomeActivity extends Activity {
         }
         setExitSharedElementCallback(FeedAdapter.createSharedElementReenterCallback(this));
 
-        dribbblePrefs = DribbblePrefs.get(this);
         designerNewsPrefs = DesignerNewsPrefs.get(this);
-        filtersAdapter = new FilterAdapter(this, SourceManager.getSources(this),
-                (sharedElement, forSource) -> {
-                    Intent login = new Intent(HomeActivity.this, DribbbleLogin.class);
-                    MorphTransform.addExtras(login,
-                            ContextCompat.getColor(HomeActivity.this, R.color.background_dark),
-                            sharedElement.getHeight() / 2);
-                    ActivityOptions options =
-                            ActivityOptions.makeSceneTransitionAnimation(HomeActivity.this,
-                                    sharedElement, getString(R.string.transition_dribbble_login));
-                    startActivityForResult(login,
-                            getAuthSourceRequestCode(forSource), options.toBundle());
-                });
+        filtersAdapter = new FilterAdapter(this, SourceManager.getSources(this));
         dataManager = new DataManager(this, filtersAdapter) {
             @Override
             public void onDataLoaded(List<? extends PlaidItem> data) {
@@ -259,16 +241,27 @@ public class HomeActivity extends Activity {
         checkEmptyState();
     }
 
+    private void bindResources() {
+        drawer = findViewById(R.id.drawer);
+        toolbar = findViewById(R.id.toolbar);
+        grid = findViewById(R.id.grid);
+        fab = findViewById(R.id.fab);
+        fab.setOnClickListener(view -> { fabClick(); });
+        filtersList = findViewById(R.id.filters);
+        loading = findViewById(android.R.id.empty);
+        noConnection = findViewById(R.id.no_connection);
+
+        columns = getResources().getInteger(R.integer.num_columns);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        dribbblePrefs.addLoginStatusListener(filtersAdapter);
         checkConnectivity();
     }
 
     @Override
     protected void onPause() {
-        dribbblePrefs.removeLoginStatusListener(filtersAdapter);
         if (monitoringConnectivity) {
             final ConnectivityManager connectivityManager
                     = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -281,11 +274,12 @@ public class HomeActivity extends Activity {
     @Override
     public void onActivityReenter(int resultCode, Intent data) {
         if (data == null || resultCode != RESULT_OK
-                || !data.hasExtra(DribbbleShot.RESULT_EXTRA_SHOT_ID)) return;
+                || !data.hasExtra(Activities.Dribbble.Shot.RESULT_EXTRA_SHOT_ID)) return;
 
         // When reentering, if the shared element is no longer on screen (e.g. after an
         // orientation change) then scroll it into view.
-        final long sharedShotId = data.getLongExtra(DribbbleShot.RESULT_EXTRA_SHOT_ID, -1L);
+        final long sharedShotId = data.getLongExtra(Activities.Dribbble.Shot.RESULT_EXTRA_SHOT_ID,
+                -1L);
         if (sharedShotId != -1L                                             // returning from a shot
                 && adapter.getDataItemCount() > 0                           // grid populated
                 && grid.findViewHolderForItemId(sharedShotId) == null) {    // view not attached
@@ -315,11 +309,6 @@ public class HomeActivity extends Activity {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        final MenuItem dribbbleLogin = menu.findItem(R.id.menu_dribbble_login);
-        if (dribbbleLogin != null) {
-            dribbbleLogin.setTitle(dribbblePrefs.isLoggedIn() ?
-                    R.string.dribbble_log_out : R.string.dribbble_login);
-        }
         final MenuItem designerNewsLogin = menu.findItem(R.id.menu_designer_news_login);
         if (designerNewsLogin != null) {
             designerNewsLogin.setTitle(designerNewsPrefs.isLoggedIn() ?
@@ -338,21 +327,11 @@ public class HomeActivity extends Activity {
                 View searchMenuView = toolbar.findViewById(R.id.menu_search);
                 Bundle options = ActivityOptions.makeSceneTransitionAnimation(this, searchMenuView,
                         getString(R.string.transition_search_back)).toBundle();
-                startActivityForResult(new Intent(this, SearchActivity.class), RC_SEARCH, options);
-                return true;
-            case R.id.menu_dribbble_login:
-                if (!dribbblePrefs.isLoggedIn()) {
-                    dribbblePrefs.login(HomeActivity.this);
-                } else {
-                    dribbblePrefs.logout();
-                    // TODO something better than a toast!!
-                    Toast.makeText(getApplicationContext(), R.string.dribbble_logged_out, Toast
-                            .LENGTH_SHORT).show();
-                }
+                startActivityForResult(ActivityHelper.intentTo(Activities.Search.INSTANCE), RC_SEARCH, options);
                 return true;
             case R.id.menu_designer_news_login:
                 if (!designerNewsPrefs.isLoggedIn()) {
-                    startActivity(new Intent(this, DesignerNewsLogin.class));
+                    startActivity(ActivityHelper.intentTo(Activities.DesignerNews.Login.INSTANCE));
                 } else {
                     designerNewsPrefs.logout(HomeActivity.this);
                     // TODO something better than a toast!!
@@ -361,7 +340,7 @@ public class HomeActivity extends Activity {
                 }
                 return true;
             case R.id.menu_about:
-                startActivity(new Intent(HomeActivity.this, AboutActivity.class),
+                startActivity(ActivityHelper.intentTo(Activities.About.INSTANCE),
                         ActivityOptions.makeSceneTransitionAnimation(this).toBundle());
                 return true;
         }
@@ -386,17 +365,17 @@ public class HomeActivity extends Activity {
                 if (searchMenuView != null) {
                     searchMenuView.setAlpha(1f);
                 }
-                if (resultCode == SearchActivity.RESULT_CODE_SAVE) {
-                    String query = data.getStringExtra(SearchActivity.EXTRA_QUERY);
+                if (resultCode == Activities.Search.RESULT_CODE_SAVE) {
+                    String query = data.getStringExtra(Activities.Search.EXTRA_QUERY);
                     if (TextUtils.isEmpty(query)) return;
                     Source dribbbleSearch = null;
                     Source designerNewsSearch = null;
                     boolean newSource = false;
-                    if (data.getBooleanExtra(SearchActivity.EXTRA_SAVE_DRIBBBLE, false)) {
+                    if (data.getBooleanExtra(Activities.Search.EXTRA_SAVE_DRIBBBLE, false)) {
                         dribbbleSearch = new Source.DribbbleSearchSource(query, true);
                         newSource = filtersAdapter.addFilter(dribbbleSearch);
                     }
-                    if (data.getBooleanExtra(SearchActivity.EXTRA_SAVE_DESIGNER_NEWS, false)) {
+                    if (data.getBooleanExtra(Activities.Search.EXTRA_SAVE_DESIGNER_NEWS, false)) {
                         designerNewsSearch = new Source.DesignerNewsSearchSource(query, true);
                         newSource |= filtersAdapter.addFilter(designerNewsSearch);
                     }
@@ -407,12 +386,12 @@ public class HomeActivity extends Activity {
                 break;
             case RC_NEW_DESIGNER_NEWS_STORY:
                 switch (resultCode) {
-                    case PostNewDesignerNewsStory.RESULT_DRAG_DISMISSED:
+                    case Activities.DesignerNews.PostStory.RESULT_DRAG_DISMISSED:
                         // need to reshow the FAB as there's no shared element transition
                         showFab();
                         unregisterPostStoryResultListener();
                         break;
-                    case PostNewDesignerNewsStory.RESULT_POSTING:
+                    case Activities.DesignerNews.PostStory.RESULT_POSTING:
                         showPostingProgress();
                         break;
                     default:
@@ -423,23 +402,6 @@ public class HomeActivity extends Activity {
             case RC_NEW_DESIGNER_NEWS_LOGIN:
                 if (resultCode == RESULT_OK) {
                     showFab();
-                }
-                break;
-            case RC_AUTH_DRIBBBLE_FOLLOWING:
-                if (resultCode == RESULT_OK) {
-                    filtersAdapter.enableFilterByKey(SourceManager.SOURCE_DRIBBBLE_FOLLOWING, this);
-                }
-                break;
-            case RC_AUTH_DRIBBBLE_USER_LIKES:
-                if (resultCode == RESULT_OK) {
-                    filtersAdapter.enableFilterByKey(
-                            SourceManager.SOURCE_DRIBBBLE_USER_LIKES, this);
-                }
-                break;
-            case RC_AUTH_DRIBBBLE_USER_SHOTS:
-                if (resultCode == RESULT_OK) {
-                    filtersAdapter.enableFilterByKey(
-                            SourceManager.SOURCE_DRIBBBLE_USER_SHOTS, this);
                 }
                 break;
         }
@@ -490,10 +452,9 @@ public class HomeActivity extends Activity {
         }
     };
 
-    @OnClick(R.id.fab)
     protected void fabClick() {
         if (designerNewsPrefs.isLoggedIn()) {
-            Intent intent = new Intent(this, PostNewDesignerNewsStory.class);
+            Intent intent = ActivityHelper.intentTo(Activities.DesignerNews.PostStory.INSTANCE);
             FabTransform.addExtras(intent,
                     ContextCompat.getColor(this, R.color.accent), R.drawable.ic_add_dark);
             intent.putExtra(PostStoryService.EXTRA_BROADCAST_RESULT, true);
@@ -502,7 +463,7 @@ public class HomeActivity extends Activity {
                     getString(R.string.transition_new_designer_news_post));
             startActivityForResult(intent, RC_NEW_DESIGNER_NEWS_STORY, options.toBundle());
         } else {
-            Intent intent = new Intent(this, DesignerNewsLogin.class);
+            Intent intent = ActivityHelper.intentTo(Activities.DesignerNews.Login.INSTANCE);
             FabTransform.addExtras(intent,
                     ContextCompat.getColor(this, R.color.accent), R.drawable.ic_add_dark);
             ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(this, fab,
@@ -613,18 +574,6 @@ public class HomeActivity extends Activity {
         }
     }
 
-    int getAuthSourceRequestCode(Source filter) {
-        switch (filter.key) {
-            case SourceManager.SOURCE_DRIBBBLE_FOLLOWING:
-                return RC_AUTH_DRIBBBLE_FOLLOWING;
-            case SourceManager.SOURCE_DRIBBBLE_USER_LIKES:
-                return RC_AUTH_DRIBBBLE_USER_LIKES;
-            case SourceManager.SOURCE_DRIBBBLE_USER_SHOTS:
-                return RC_AUTH_DRIBBBLE_USER_SHOTS;
-        }
-        throw new InvalidParameterException();
-    }
-
     private void showPostingProgress() {
         ensurePostingProgressInflated();
         fabPosting.setVisibility(View.VISIBLE);
@@ -649,26 +598,35 @@ public class HomeActivity extends Activity {
                 // create the no filters empty text
                 ViewStub stub = findViewById(R.id.stub_no_filters);
                 noFiltersEmptyText = (TextView) stub.inflate();
-                String emptyText = getString(R.string.no_filters_selected);
-                int filterPlaceholderStart = emptyText.indexOf('\u08B4');
-                int altMethodStart = filterPlaceholderStart + 3;
+                SpannedString emptyText = (SpannedString) getText(R.string.no_filters_selected);
                 SpannableStringBuilder ssb = new SpannableStringBuilder(emptyText);
-                // show an image of the filter icon
-                ssb.setSpan(new ImageSpan(this, R.drawable.ic_filter_small,
-                                ImageSpan.ALIGN_BASELINE),
-                        filterPlaceholderStart,
-                        filterPlaceholderStart + 1,
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                // make the alt method (swipe from right) less prominent and italic
-                ssb.setSpan(new ForegroundColorSpan(
-                                ContextCompat.getColor(this, R.color.text_secondary_light)),
-                        altMethodStart,
-                        emptyText.length(),
-                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.setSpan(new StyleSpan(Typeface.ITALIC),
-                        altMethodStart,
-                        emptyText.length(),
-                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                final Annotation[] annotations =
+                        emptyText.getSpans(0, emptyText.length(), Annotation.class);
+                if (annotations != null && annotations.length > 0) {
+                    for (int i = 0; i < annotations.length; i++) {
+                        final Annotation annotation = annotations[i];
+                        if (annotation.getKey().equals("src")) {
+                            // image span markup
+                            String name = annotation.getValue();
+                            int id = getResources().getIdentifier(name, null, getPackageName());
+                            if (id == 0) continue;
+                            ssb.setSpan(new ImageSpan(this, id,
+                                            ImageSpan.ALIGN_BASELINE),
+                                    emptyText.getSpanStart(annotation),
+                                    emptyText.getSpanEnd(annotation),
+                                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        } else if (annotation.getKey().equals("foregroundColor")) {
+                            // foreground color span markup
+                            String name = annotation.getValue();
+                            int id = getResources().getIdentifier(name, null, getPackageName());
+                            if (id == 0) continue;
+                            ssb.setSpan(new ForegroundColorSpan(ContextCompat.getColor(this, id)),
+                                    emptyText.getSpanStart(annotation),
+                                    emptyText.getSpanEnd(annotation),
+                                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        }
+                    }
+                }
                 noFiltersEmptyText.setText(ssb);
                 noFiltersEmptyText.setOnClickListener(v -> drawer.openDrawer(GravityCompat.END));
             }

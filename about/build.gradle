@@ -1,0 +1,60 @@
+/*
+ *   Copyright 2018 Google LLC
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *
+ */
+
+apply plugin: 'com.android.dynamic-feature'
+apply plugin: 'kotlin-android'
+
+android {
+    compileSdkVersion versions.compileSdk
+
+    defaultConfig {
+        minSdkVersion versions.minSdk
+        targetSdkVersion versions.targetSdk
+
+        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+}
+
+repositories {
+    google()
+    mavenCentral()
+    jcenter()
+}
+
+dependencies {
+    implementation project(':app')
+
+    testImplementation project(':test_shared')
+    testImplementation "android.arch.core:core-testing:${versions.lifecycle}"
+    testImplementation "com.nhaarman:mockito-kotlin:${versions.mockito_kotlin}"
+    testImplementation "junit:junit:${versions.junit}"
+
+    androidTestImplementation project(':test_shared')
+    androidTestImplementation "android.arch.core:core-testing:${versions.lifecycle}"
+    androidTestImplementation "com.android.support.test:runner:${versions.test_runner}"
+    androidTestImplementation "com.android.support.test:rules:${versions.test_rules}"
+    androidTestImplementation "com.android.support.test.espresso:espresso-core:${versions.espresso}"
+    androidTestImplementation "com.nhaarman:mockito-kotlin:${versions.mockito_kotlin}"
+    androidTestImplementation "org.mockito:mockito-android:${versions.mockito}"
+    androidTestImplementation "org.mockito:mockito-core:${versions.mockito}"
+}
