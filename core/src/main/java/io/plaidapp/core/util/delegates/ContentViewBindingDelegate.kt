@@ -17,9 +17,9 @@
 package io.plaidapp.core.util.delegates
 
 import android.app.Activity
-import android.databinding.DataBindingUtil
-import android.databinding.ViewDataBinding
-import android.support.annotation.LayoutRes
+import androidx.databinding.DataBindingUtil
+import androidx.databinding.ViewDataBinding
+import androidx.annotation.LayoutRes
 import kotlin.reflect.KProperty
 
 /**
@@ -32,9 +32,9 @@ class ContentViewBindingDelegate<in R : Activity, out T : ViewDataBinding>(
 
     private var binding: T? = null
 
-    operator fun getValue(activity: Activity, property: KProperty<*>): T {
+    operator fun getValue(activity: R, property: KProperty<*>): T {
         if (binding == null) {
-            binding = DataBindingUtil.setContentView<T>(activity, layoutRes)
+            binding = DataBindingUtil.setContentView(activity, layoutRes)
         }
         return binding!!
     }
@@ -42,6 +42,4 @@ class ContentViewBindingDelegate<in R : Activity, out T : ViewDataBinding>(
 
 fun <R : Activity, T : ViewDataBinding> contentView(
     @LayoutRes layoutRes: Int
-): ContentViewBindingDelegate<R, T> {
-    return ContentViewBindingDelegate(layoutRes)
-}
+): ContentViewBindingDelegate<R, T> = ContentViewBindingDelegate(layoutRes)

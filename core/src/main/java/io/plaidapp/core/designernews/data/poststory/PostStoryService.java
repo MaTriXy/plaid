@@ -19,19 +19,20 @@ package io.plaidapp.core.designernews.data.poststory;
 
 import android.app.IntentService;
 import android.content.Intent;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.widget.Toast;
 
 import java.util.List;
 
-import io.plaidapp.core.designernews.DesignerNewsPrefs;
+import io.plaidapp.core.designernews.Injection;
 import io.plaidapp.core.designernews.data.api.DesignerNewsService;
+import io.plaidapp.core.designernews.data.login.LoginRepository;
 import io.plaidapp.core.designernews.data.poststory.model.NewStoryRequest;
 import io.plaidapp.core.designernews.data.stories.model.Story;
-import io.plaidapp.core.designernews.data.users.model.User;
+import io.plaidapp.core.designernews.data.login.model.LoggedInUser;
 import io.plaidapp.core.designernews.data.stories.model.StoryKt;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -64,8 +65,11 @@ public class PostStoryService extends IntentService {
         if (intent == null) return;
         if (ACTION_POST_NEW_STORY.equals(intent.getAction())) {
             final boolean broadcastResult = intent.getBooleanExtra(EXTRA_BROADCAST_RESULT, false);
-            final DesignerNewsPrefs designerNewsPrefs = DesignerNewsPrefs.get(this);
-            if (!designerNewsPrefs.isLoggedIn()) return; // shouldn't happen...
+
+            final DesignerNewsService service = Injection.provideDesignerNewsService(this);
+            final LoginRepository repository = Injection.provideLoginRepository(this);
+
+            if (!repository.isLoggedIn()) return; // shouldn't happen...
 
             final String title = intent.getStringExtra(EXTRA_STORY_TITLE);
             final String url = intent.getStringExtra(EXTRA_STORY_URL);
@@ -75,8 +79,7 @@ public class PostStoryService extends IntentService {
             NewStoryRequest storyToPost = getNewStoryRequest(title, url, comment);
             if (storyToPost == null) return;
 
-            postStory(broadcastResult, designerNewsPrefs.getApi(), designerNewsPrefs.getUser(),
-                    storyToPost);
+            postStory(broadcastResult, service, repository.getUser(), storyToPost);
         }
     }
 
@@ -94,7 +97,7 @@ public class PostStoryService extends IntentService {
     private void postStory(
             boolean broadcastResult,
             DesignerNewsService service,
-            User user,
+            LoggedInUser user,
             NewStoryRequest storyToPost) {
         final Call<List<Story>> postStoryCall =
                 service.postStory(storyToPost);
@@ -119,7 +122,7 @@ public class PostStoryService extends IntentService {
         }
     }
 
-    private void broadcastSuccess(List<Story> stories, User user) {
+    private void broadcastSuccess(List<Story> stories, LoggedInUser user) {
         final Intent success = new Intent(BROADCAST_ACTION_SUCCESS);
         // API doesn't fill in author details so add them here
         final Story newStory = getStory(stories, user);
@@ -136,7 +139,7 @@ public class PostStoryService extends IntentService {
     }
 
     @NonNull
-    private Story getStory(List<Story> stories, User user) {
+    private Story getStory(List<Story> stories, LoggedInUser user) {
         final Story returnedStory = stories.get(0);
         // API doesn't add a self URL, so potentially add one for consistency
         String defaultUrl = TextUtils.isEmpty(returnedStory.getUrl()) ?

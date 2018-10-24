@@ -16,10 +16,10 @@
 
 package io.plaidapp.core.dribbble.data.search
 
-import android.support.annotation.StringDef
+import androidx.annotation.StringDef
 
 import io.plaidapp.core.dribbble.data.api.model.Shot
-import kotlinx.coroutines.experimental.Deferred
+import kotlinx.coroutines.Deferred
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.GET

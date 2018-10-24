@@ -20,7 +20,8 @@ import io.plaidapp.core.dribbble.data.api.model.Images.ImageSize.NORMAL_IMAGE_SI
 import io.plaidapp.core.dribbble.data.api.model.Images.ImageSize.TWO_X_IMAGE_SIZE
 
 /**
- * Models links to the various quality of images of a shot.
+ * Models links to the various quality of images of a shot. One of [hidpi] or [normal] must be
+ * non-null.
  */
 data class Images(
     val hidpi: String? = null,
@@ -28,12 +29,12 @@ data class Images(
     val teaser: String? = null
 ) {
 
-    fun best(): String? {
-        return if (!hidpi.isNullOrEmpty()) hidpi else normal
+    fun best(): String {
+        return hidpi ?: normal!!
     }
 
     fun bestSize(): ImageSize {
-        return if (!hidpi.isNullOrEmpty()) TWO_X_IMAGE_SIZE else NORMAL_IMAGE_SIZE
+        return if (hidpi != null) TWO_X_IMAGE_SIZE else NORMAL_IMAGE_SIZE
     }
 
     enum class ImageSize(val width: Int, val height: Int) {

@@ -17,14 +17,14 @@
 package io.plaidapp.dribbble.domain
 
 import android.net.Uri
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
 import io.plaidapp.core.dribbble.data.api.model.Images
 import io.plaidapp.core.dribbble.data.api.model.Shot
+import io.plaidapp.core.util.ImageUriProvider
 import io.plaidapp.dribbble.testShot
-import kotlinx.coroutines.experimental.CompletableDeferred
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -96,20 +96,9 @@ class GetShareShotInfoUseCaseTest {
         assertTrue(shareInfo.mimeType.contains("jpeg"))
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun getShareInfo_withoutUrlThrows() = runBlocking {
-        // Given a shot without a valid image URL
-        val shot = withUrl(null)
-
-        // When invoking the use case
-        getShareShotInfoUseCase(shot)
-        // Then it should throw
-        Unit
-    }
-
     private fun withUrl(url: String?): Shot {
         val shot = testShot.copy(images = Images(hidpi = url))
-        whenever(imageUriProvider(any(), any())).thenReturn(CompletableDeferred(uri))
+        runBlocking { whenever(imageUriProvider(any(), any(), any())).thenReturn(uri) }
         return shot
     }
 }

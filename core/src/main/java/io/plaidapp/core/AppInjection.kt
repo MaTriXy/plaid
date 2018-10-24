@@ -21,6 +21,8 @@ package io.plaidapp.core
 import android.content.Context
 import android.content.SharedPreferences
 import io.plaidapp.core.data.CoroutinesContextProvider
+import kotlinx.coroutines.CommonPool
+import kotlinx.coroutines.android.UI
 import okhttp3.logging.HttpLoggingInterceptor
 
 /**
@@ -35,11 +37,14 @@ val debugLevel = if (BuildConfig.DEBUG) {
     HttpLoggingInterceptor.Level.NONE
 }
 
+@Deprecated("Use Dagger LoggingInterceptorModule instead")
 val loggingInterceptor = HttpLoggingInterceptor().apply { level = debugLevel }
 
+@Deprecated("Use Dagger SharedPreferenceModule instead")
 fun provideSharedPreferences(context: Context, name: String): SharedPreferences {
     return context.applicationContext
             .getSharedPreferences(name, Context.MODE_PRIVATE)
 }
 
-fun provideCoroutinesContextProvider(): CoroutinesContextProvider = CoroutinesContextProvider()
+@Deprecated("Use Dagger CoroutinesContextProviderModule instead")
+fun provideCoroutinesContextProvider() = CoroutinesContextProvider(UI, CommonPool)

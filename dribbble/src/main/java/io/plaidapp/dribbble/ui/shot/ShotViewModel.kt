@@ -16,9 +16,9 @@
 
 package io.plaidapp.dribbble.ui.shot
 
-import android.arch.lifecycle.LiveData
-import android.arch.lifecycle.MutableLiveData
-import android.arch.lifecycle.ViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import io.plaidapp.core.data.CoroutinesContextProvider
 import io.plaidapp.core.data.Result
 import io.plaidapp.core.dribbble.data.ShotsRepository
@@ -26,13 +26,14 @@ import io.plaidapp.core.dribbble.data.api.model.Shot
 import io.plaidapp.core.util.event.Event
 import io.plaidapp.dribbble.domain.GetShareShotInfoUseCase
 import io.plaidapp.dribbble.domain.ShareShotInfo
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * View model for [ShotActivity].
  */
-class ShotViewModel(
+class ShotViewModel @Inject constructor(
     shotId: Long,
     shotsRepository: ShotsRepository,
     private val getShareShotInfoUseCase: GetShareShotInfoUseCase,

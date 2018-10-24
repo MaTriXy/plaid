@@ -15,7 +15,7 @@
  *
  */
 
-apply plugin: 'com.android.library'
+apply plugin: 'com.android.dynamic-feature'
 
 android {
     compileSdkVersion versions.compileSdk
@@ -34,8 +34,9 @@ android {
 repositories {
     google()
     jcenter()
+    maven { url 'http://dl.bintray.com/kotlin/kotlin-eap' }
 }
 
 dependencies {
-    implementation project(':core')
+    implementation project(':app')
 }

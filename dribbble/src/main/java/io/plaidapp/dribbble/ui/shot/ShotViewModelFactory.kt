@@ -16,16 +16,17 @@
 
 package io.plaidapp.dribbble.ui.shot
 
-import android.arch.lifecycle.ViewModel
-import android.arch.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import io.plaidapp.core.data.CoroutinesContextProvider
 import io.plaidapp.core.dribbble.data.ShotsRepository
 import io.plaidapp.dribbble.domain.GetShareShotInfoUseCase
+import javax.inject.Inject
 
 /**
  * Factory for creating [ShotViewModel] with args.
  */
-class ShotViewModelFactory(
+class ShotViewModelFactory @Inject constructor(
     private val shotId: Long,
     private val shotRepository: ShotsRepository,
     private val getShareShotInfoUseCase: GetShareShotInfoUseCase,

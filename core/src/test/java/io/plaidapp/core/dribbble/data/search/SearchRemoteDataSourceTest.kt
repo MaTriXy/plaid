@@ -16,21 +16,23 @@
 
 package io.plaidapp.core.dribbble.data.search
 
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.plaidapp.core.data.Result
 import io.plaidapp.core.dribbble.data.api.model.Shot
 import io.plaidapp.core.dribbble.data.errorResponseBody
 import io.plaidapp.core.dribbble.data.search.SearchRemoteDataSource.SortOrder
 import io.plaidapp.core.dribbble.data.shots
-import kotlinx.coroutines.experimental.CompletableDeferred
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Response
+import java.net.UnknownHostException
 
 /**
  * Tests for [SearchRemoteDataSource] which mocks the search service dependency.
@@ -110,6 +112,19 @@ class SearchRemoteDataSourceTest {
 
         // Then the supplied values for these params are used
         verify(service).searchDeferred(query, page, popularSearchParam, customPerPage)
+    }
+
+    @Test
+    fun search_whenRequestThrowsException() = runBlocking {
+        // Given that the service throws an exception
+        doAnswer { throw UnknownHostException() }
+            .whenever(service).searchDeferred(query, page, defaultSortOrder, defaultResultsPerPage)
+
+        // When performing a search
+        val response = dataSource.search(query, page, SortOrder.RECENT, defaultResultsPerPage)
+
+        // Then an error is reported
+        assertTrue(response is Result.Error)
     }
 
     private fun withSuccess(shots: List<Shot>?) {

@@ -16,19 +16,22 @@
 
 package io.plaidapp.core.designernews.data.stories
 
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.plaidapp.core.data.Result
 import io.plaidapp.core.designernews.data.api.DesignerNewsService
 import io.plaidapp.core.designernews.data.stories.model.StoryResponse
 import io.plaidapp.core.designernews.errorResponseBody
-import kotlinx.coroutines.experimental.CompletableDeferred
-import kotlinx.coroutines.experimental.runBlocking
+import io.plaidapp.core.designernews.storyLinks
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Response
+import java.net.UnknownHostException
 import java.util.Date
 import java.util.GregorianCalendar
 
@@ -38,10 +41,18 @@ import java.util.GregorianCalendar
 class StoriesRemoteDataSourceTest {
 
     private val createdDate: Date = GregorianCalendar(2018, 1, 13).time
-    private val story =
-        StoryResponse(id = 45L, title = "Plaid 2.0 was released", created_at = createdDate)
-    private val storySequel =
-        StoryResponse(id = 876L, title = "Plaid 2.0 is bug free", created_at = createdDate)
+    private val story = StoryResponse(
+        id = 45L,
+        title = "Plaid 2.0 was released",
+        created_at = createdDate,
+        links = storyLinks
+    )
+    private val storySequel = StoryResponse(
+        id = 876L,
+        title = "Plaid 2.0 is bug free",
+        created_at = createdDate,
+        links = storyLinks
+    )
     private val stories = listOf(story, storySequel)
     private val query = "Plaid 2.0"
 
@@ -75,6 +86,19 @@ class StoriesRemoteDataSourceTest {
     }
 
     @Test
+    fun loadStories_withException() = runBlocking {
+        // Given that the service throws an exception
+        doAnswer { throw UnknownHostException() }
+            .whenever(service).getStories(1)
+
+        // When requesting stories
+        val result = dataSource.loadStories(1)
+
+        // Then error is returned
+        assertTrue(result is Result.Error)
+    }
+
+    @Test
     fun search_withSuccess() = runBlocking {
         // Given that the service responds with success
         withSearchSuccess(query, 2, stories)
@@ -92,6 +116,18 @@ class StoriesRemoteDataSourceTest {
     fun search_withError() = runBlocking {
         // Given that the service responds with error
         withSearchError(query, 1)
+
+        // When searching for stories
+        val result = dataSource.search(query, 1)
+
+        // Then error is returned
+        assertTrue(result is Result.Error)
+    }
+
+    @Test
+    fun search_withException() = runBlocking {
+        // Given that the service throws an exception
+        whenever(service.search(query, 1)).thenThrow(IllegalStateException::class.java)
 
         // When searching for stories
         val result = dataSource.search(query, 1)

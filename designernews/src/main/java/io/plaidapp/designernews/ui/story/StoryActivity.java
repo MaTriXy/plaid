@@ -23,7 +23,7 @@ import android.animation.ObjectAnimator;
 import android.annotation.TargetApi;
 import android.app.SharedElementCallback;
 import android.app.assist.AssistContent;
-import android.arch.lifecycle.ViewModelProviders;
+import androidx.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
@@ -32,15 +32,15 @@ import android.graphics.drawable.AnimatedVectorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.ActivityOptionsCompat;
-import android.support.v4.app.ShareCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.app.ShareCompat;
+import androidx.core.content.ContextCompat;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
@@ -62,11 +62,10 @@ import com.bumptech.glide.load.resource.bitmap.BitmapTransitionOptions;
 import in.uncod.android.bypass.Bypass;
 import in.uncod.android.bypass.Markdown;
 import io.plaidapp.core.data.Result;
-import io.plaidapp.core.designernews.DesignerNewsPrefs;
 import io.plaidapp.core.designernews.Injection;
+import io.plaidapp.core.designernews.data.login.LoginRepository;
 import io.plaidapp.core.designernews.data.stories.model.Story;
-import io.plaidapp.core.designernews.data.users.model.User;
-import io.plaidapp.core.designernews.domain.CommentsUseCase;
+import io.plaidapp.core.designernews.data.login.model.LoggedInUser;
 import io.plaidapp.core.designernews.domain.model.Comment;
 import io.plaidapp.core.ui.transitions.GravityArcMotion;
 import io.plaidapp.core.ui.transitions.MorphTransform;
@@ -85,13 +84,9 @@ import io.plaidapp.designernews.R;
 import io.plaidapp.designernews.ui.login.LoginActivity;
 import io.plaidapp.ui.widget.PinnedOffsetView;
 import kotlin.Unit;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -128,10 +123,9 @@ public class StoryActivity extends AppCompatActivity {
 
     private Story story;
 
-    private CommentsUseCase commentsUseCase;
     private StoryViewModel viewModel;
 
-    private DesignerNewsPrefs designerNewsPrefs;
+    private LoginRepository loginRepository;
     private Markdown markdown;
     private CustomTabActivityHelper customTab;
 
@@ -146,21 +140,12 @@ public class StoryActivity extends AppCompatActivity {
         }
         StoryViewModelFactory factory = InjectionKt.provideStoryViewModelFactory(storyId, this);
         viewModel = ViewModelProviders.of(this, factory).get(StoryViewModel.class);
-        commentsUseCase = Injection.provideCommentsUseCase(this);
-
+        loginRepository = Injection.provideLoginRepository(this);
         bindResources();
 
         story = viewModel.getStory();
-
-        commentsUseCase.getComments(story.getLinks().getComments(),
-                result -> {
-                    if (result instanceof Result.Success) {
-                        Result.Success<List<Comment>> success = (Result.Success<List<Comment>>) result;
-                        List<Comment> data = success.getData();
-                        setupComments(data);
-                    }
-                    return Unit.INSTANCE;
-                });
+        viewModel.getUiModel().observe(this,
+                storyUiModel -> setupComments(storyUiModel.getComments()));
 
         fab.setOnClickListener(fabClick);
         chromeFader = new ElasticDragDismissFrameLayout.SystemChromeFader(this);
@@ -173,7 +158,6 @@ public class StoryActivity extends AppCompatActivity {
                 .setBlockQuoteIndentSize(TypedValue.COMPLEX_UNIT_DIP, 2f)
                 .setBlockQuoteTextColor(
                         ContextCompat.getColor(this, io.plaidapp.R.color.designer_news_quote)));
-        designerNewsPrefs = DesignerNewsPrefs.get(this);
         layoutManager = new LinearLayoutManager(this);
         commentsList.setLayoutManager(layoutManager);
         commentsList.setItemAnimator(new CommentAnimator(
@@ -221,11 +205,7 @@ public class StoryActivity extends AppCompatActivity {
 
     private void setupComments(List<Comment> comments) {
         if (comments.size() > 0) {
-            // flatten the comments from a nested structure {@see Comment#comments} to a
-            // list appropriate for our adapter (using the depth attribute).
-            List<Comment> flattened = new ArrayList<>(story.getCommentCount());
-            unnestComments(comments, flattened);
-            commentsAdapter.updateList(flattened);
+            commentsAdapter.updateList(comments);
             commentsList.setAdapter(commentsAdapter);
         }
     }
@@ -548,7 +528,7 @@ public class StoryActivity extends AppCompatActivity {
         enterComment = enterCommentView.findViewById(R.id.comment);
         postComment = enterCommentView.findViewById(R.id.post_comment);
         postComment.setOnClickListener(v -> {
-            if (designerNewsPrefs.isLoggedIn()) {
+            if (loginRepository.isLoggedIn()) {
                 if (TextUtils.isEmpty(enterComment.getText())) return;
                 enterComment.setEnabled(false);
                 postComment.setEnabled(false);
@@ -559,25 +539,19 @@ public class StoryActivity extends AppCompatActivity {
             enterComment.clearFocus();
         });
         enterComment.setOnFocusChangeListener(enterCommentFocus);
-        // hide the comment view until we know that posting a DN comment works
-        enterCommentView.setVisibility(View.GONE);
         return enterCommentView;
     }
 
     private void addComment() {
-        final Call<Comment> comment = designerNewsPrefs.getApi()
-                .comment(story.getId(), enterComment.getText().toString());
-        comment.enqueue(new Callback<Comment>() {
-            @Override
-            public void onResponse(Call<Comment> call, Response<Comment> response) {
-                Comment responseComment = response.body();
+        // TODO move the result handling in the
+        viewModel.storyReplyRequested(enterComment.getText(), result -> {
+            if (result instanceof Result.Success) {
+                Comment responseComment = ((Result.Success<Comment>) result).getData();
                 commentAdded(responseComment);
-            }
-
-            @Override
-            public void onFailure(Call<Comment> call, Throwable t) {
+            } else {
                 commentAddingFailed();
             }
+            return Unit.INSTANCE;
         });
     }
 
@@ -596,7 +570,7 @@ public class StoryActivity extends AppCompatActivity {
     }
 
     private void upvoteStory() {
-        if (designerNewsPrefs.isLoggedIn()) {
+        if (loginRepository.isLoggedIn()) {
             if (!upvoteStory.isActivated()) {
                 upvoteStory.setActivated(true);
                 viewModel.storyUpvoteRequested(story.getId(),
@@ -638,15 +612,6 @@ public class StoryActivity extends AppCompatActivity {
                 triggeringView, getString(io.plaidapp.R.string.transition_designer_news_login));
 
         ActivityCompat.startActivityForResult(this, login, requestCode, options.toBundle());
-    }
-
-    private void unnestComments(List<Comment> nested, List<Comment> flat) {
-        for (Comment comment : nested) {
-            flat.add(comment);
-            if (comment.getReplies().size() > 0) {
-                unnestComments(comment.getReplies(), flat);
-            }
-        }
     }
 
     private View.OnFocusChangeListener enterCommentFocus = new View.OnFocusChangeListener() {
@@ -902,19 +867,13 @@ public class StoryActivity extends AppCompatActivity {
         }
 
         private void replyToComment(Long commentId, String reply) {
-            final Call<Comment> replyToComment = designerNewsPrefs.getApi()
-                    .replyToComment(commentId, reply);
-            replyToComment.enqueue(new Callback<Comment>() {
-                @Override
-                public void onResponse(Call<Comment> call, Response<Comment> response) {
-
-                }
-
-                @Override
-                public void onFailure(Call<Comment> call, Throwable t) {
+            // TODO move the result handling in the VM
+            viewModel.commentReplyRequested(reply, commentId, result -> {
+                if (result instanceof Result.Error) {
                     Toast.makeText(getApplicationContext(),
                             "Failed to post comment :(", Toast.LENGTH_SHORT).show();
                 }
+                return Unit.INSTANCE;
             });
         }
 
@@ -1020,11 +979,11 @@ public class StoryActivity extends AppCompatActivity {
 
             holder.getCommentVotes().setOnClickListener(v -> {
                 Comment comment = getComment(holder.getAdapterPosition());
-                handleCommentVotesClick(holder, designerNewsPrefs.isLoggedIn(), comment);
+                handleCommentVotesClick(holder, loginRepository.isLoggedIn(), comment);
             });
 
             holder.getPostReply().setOnClickListener(v -> {
-                if (designerNewsPrefs.isLoggedIn()) {
+                if (loginRepository.isLoggedIn()) {
                     String reply = holder.getCommentReply().getText().toString();
                     if (reply.isEmpty()) return;
 
@@ -1035,7 +994,7 @@ public class StoryActivity extends AppCompatActivity {
                     // insert a locally created comment before actually
                     // hitting the API for immediate response
                     int replyDepth = replyingTo.getDepth() + 1;
-                    User user = designerNewsPrefs.getUser();
+                    LoggedInUser user = loginRepository.getUser();
                     String commentBody = holder.getCommentReply().getText().toString();
                     final int newReplyPosition = commentsAdapter.addCommentReply(
                             new Comment(
@@ -1045,7 +1004,6 @@ public class StoryActivity extends AppCompatActivity {
                                     new Date(),
                                     replyDepth,
                                     0,
-                                    Collections.emptyList(),
                                     user.getId(),
                                     user.getDisplayName(),
                                     user.getPortraitUrl(),
