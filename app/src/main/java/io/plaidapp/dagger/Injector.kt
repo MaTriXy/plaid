@@ -14,35 +14,36 @@
  * limitations under the License.
  */
 
+@file:JvmName("Injector")
+
 package io.plaidapp.dagger
 
 import io.plaidapp.core.dagger.DataManagerModule
 import io.plaidapp.core.dagger.FilterAdapterModule
 import io.plaidapp.core.dagger.OnDataLoadedModule
+import io.plaidapp.core.dagger.SharedPreferencesModule
 import io.plaidapp.core.data.BaseDataManager
 import io.plaidapp.core.data.PlaidItem
+import io.plaidapp.core.designernews.data.login.LoginLocalDataSource
 import io.plaidapp.ui.HomeActivity
 import io.plaidapp.ui.PlaidApplication
 
 /**
  * Injector for HomeActivity.
- *
- * TODO: Convert to extension function once [HomeActivity] is converted to Kotlin.
  */
-object Injector {
-
-    @JvmStatic
-    fun inject(
-        activity: HomeActivity,
-        dataLoadedCallback: BaseDataManager.OnDataLoadedCallback<List<PlaidItem>>
-    ) {
-        DaggerHomeComponent.builder()
-            .coreComponent(PlaidApplication.coreComponent(activity))
-            .dataManagerModule(DataManagerModule(activity))
-            .dataLoadedModule(OnDataLoadedModule(dataLoadedCallback))
-            .filterAdapterModule(FilterAdapterModule(activity))
-            .homeModule(HomeModule(activity))
-            .build()
-            .inject(activity)
-    }
+fun inject(
+    activity: HomeActivity,
+    dataLoadedCallback: BaseDataManager.OnDataLoadedCallback<List<PlaidItem>>
+) {
+    DaggerHomeComponent.builder()
+        .coreComponent(PlaidApplication.coreComponent(activity))
+        .dataManagerModule(DataManagerModule())
+        .dataLoadedModule(OnDataLoadedModule(dataLoadedCallback))
+        .filterAdapterModule(FilterAdapterModule(activity))
+        .homeModule(HomeModule(activity))
+        .sharedPreferencesModule(
+            SharedPreferencesModule(activity, LoginLocalDataSource.DESIGNER_NEWS_PREF)
+        )
+        .build()
+        .inject(activity)
 }

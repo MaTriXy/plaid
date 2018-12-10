@@ -38,5 +38,5 @@ import io.plaidapp.core.dagger.scope.ModuleScope
 
     @Provides
     @ModuleScope
-    fun provideAboutStyler() = AboutStyler(activity)
+    fun provideAboutStyler(): AboutStyler = AboutStyler(activity)
 }

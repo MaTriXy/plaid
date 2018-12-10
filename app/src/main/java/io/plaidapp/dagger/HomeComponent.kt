@@ -17,19 +17,19 @@
 package io.plaidapp.dagger
 
 import dagger.Component
+import io.plaidapp.core.dagger.BaseComponent
 import io.plaidapp.core.dagger.CoreComponent
 import io.plaidapp.core.dagger.DataManagerModule
 import io.plaidapp.core.dagger.FilterAdapterModule
 import io.plaidapp.core.dagger.OnDataLoadedModule
+import io.plaidapp.core.dagger.SharedPreferencesModule
 import io.plaidapp.ui.HomeActivity
 
 /**
  * Dagger component for the [HomeActivity].
  */
 @Component(modules = [HomeModule::class], dependencies = [CoreComponent::class])
-interface HomeComponent {
-
-    fun inject(activity: HomeActivity)
+interface HomeComponent : BaseComponent<HomeActivity> {
 
     @Component.Builder
     interface Builder {
@@ -39,6 +39,7 @@ interface HomeComponent {
         fun dataManagerModule(module: DataManagerModule): Builder
         fun dataLoadedModule(module: OnDataLoadedModule): Builder
         fun filterAdapterModule(module: FilterAdapterModule): Builder
+        fun sharedPreferencesModule(module: SharedPreferencesModule): Builder
         fun homeModule(module: HomeModule): Builder
     }
 }

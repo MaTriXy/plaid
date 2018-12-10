@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package io.plaidapp.core.dagger
+package io.plaidapp.core.dagger.designernews
 
+import android.app.Service
+import android.content.Context
 import dagger.Module
 import dagger.Provides
-import io.plaidapp.core.data.CoroutinesContextProvider
-import kotlinx.coroutines.CommonPool
-import kotlinx.coroutines.android.UI
+import io.plaidapp.core.designernews.data.votes.UpvoteStoryService
 
 /**
- * Provide [CoroutinesContextProvider] to this app's components.
+ * Dagger module for [UpvoteStoryService].
  */
-@Module class CoroutinesContextProviderModule {
+@Module(includes = [DesignerNewsDataModule::class])
+class UpvoteStoryServiceModule(private val service: UpvoteStoryService) {
 
-    @Provides fun provideCoroutinesContextProvider() = CoroutinesContextProvider(UI, CommonPool)
+    @Provides
+    fun context(): Context = service
+
+    @Provides
+    fun service(): Service = service
 }

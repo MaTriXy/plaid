@@ -19,7 +19,7 @@ package io.plaidapp.designernews.ui.story
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import io.plaidapp.core.data.CoroutinesContextProvider
+import io.plaidapp.core.data.CoroutinesDispatcherProvider
 import io.plaidapp.core.data.Result
 import io.plaidapp.core.designernews.data.stories.model.Story
 import io.plaidapp.core.designernews.domain.model.Comment
@@ -30,6 +30,7 @@ import io.plaidapp.designernews.domain.PostReplyUseCase
 import io.plaidapp.designernews.domain.PostStoryCommentUseCase
 import io.plaidapp.designernews.domain.UpvoteCommentUseCase
 import io.plaidapp.designernews.domain.UpvoteStoryUseCase
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,7 +47,7 @@ class StoryViewModel(
     private val getCommentsWithRepliesAndUsers: GetCommentsWithRepliesAndUsersUseCase,
     private val upvoteStory: UpvoteStoryUseCase,
     private val upvoteComment: UpvoteCommentUseCase,
-    private val contextProvider: CoroutinesContextProvider
+    private val dispatcherProvider: CoroutinesDispatcherProvider
 ) : ViewModel() {
 
     private val _uiModel = MutableLiveData<StoryUiModel>()
@@ -54,6 +55,9 @@ class StoryViewModel(
         get() = _uiModel
 
     val story: Story
+
+    private val parentJob = Job()
+    private val scope = CoroutineScope(dispatcherProvider.main + parentJob)
 
     init {
         val result = getStoryUseCase(storyId)
@@ -66,39 +70,33 @@ class StoryViewModel(
         }.exhaustive
     }
 
-    private val parentJob = Job()
+    fun storyUpvoteRequested(storyId: Long, onResult: (result: Result<Unit>) -> Unit) =
+        scope.launch(dispatcherProvider.computation) {
+            val result = upvoteStory(storyId)
+            withContext(dispatcherProvider.main) { onResult(result) }
+        }
 
-    fun storyUpvoteRequested(storyId: Long, onResult: (result: Result<Unit>) -> Unit) = launch(
-        context = contextProvider.io,
-        parent = parentJob
-    ) {
-        val result = upvoteStory(storyId)
-        withContext(contextProvider.io) { onResult(result) }
-    }
-
-    fun commentUpvoteRequested(commentId: Long, onResult: (result: Result<Unit>) -> Unit) = launch(
-        context = contextProvider.io,
-        parent = parentJob
-    ) {
-        val result = upvoteComment(commentId)
-        withContext(contextProvider.io) { onResult(result) }
-    }
+    fun commentUpvoteRequested(commentId: Long, onResult: (result: Result<Unit>) -> Unit) =
+        scope.launch(dispatcherProvider.computation) {
+            val result = upvoteComment(commentId)
+            withContext(dispatcherProvider.main) { onResult(result) }
+        }
 
     fun commentReplyRequested(
         text: CharSequence,
         commentId: Long,
         onResult: (result: Result<Comment>) -> Unit
-    ) = launch(contextProvider.io, parent = parentJob) {
+    ) = scope.launch(dispatcherProvider.computation) {
         val result = postReply(text.toString(), commentId)
-        withContext(contextProvider.main) { onResult(result) }
+        withContext(dispatcherProvider.main) { onResult(result) }
     }
 
     fun storyReplyRequested(
         text: CharSequence,
         onResult: (result: Result<Comment>) -> Unit
-    ) = launch(contextProvider.io, parent = parentJob) {
+    ) = scope.launch(dispatcherProvider.computation) {
         val result = postStoryComment(text.toString(), story.id)
-        withContext(contextProvider.main) { onResult(result) }
+        withContext(dispatcherProvider.main) { onResult(result) }
     }
 
     override fun onCleared() {
@@ -106,17 +104,16 @@ class StoryViewModel(
         super.onCleared()
     }
 
-    private fun getComments() = launch(contextProvider.io, parent = parentJob) {
+    private fun getComments() = scope.launch(dispatcherProvider.computation) {
         val result = getCommentsWithRepliesAndUsers(story.links.comments)
         if (result is Result.Success) {
-            emitUiModel(result.data)
+            withContext(dispatcherProvider.main) { emitUiModel(result.data) }
         }
     }
 
-    private fun emitUiModel(comments: List<Comment>) =
-        launch(contextProvider.main, parent = parentJob) {
-            _uiModel.value = StoryUiModel(comments)
-        }
+    private fun emitUiModel(comments: List<Comment>) {
+        _uiModel.value = StoryUiModel(comments)
+    }
 }
 
 /**
