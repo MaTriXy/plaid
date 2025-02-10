@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,39 +18,85 @@ package io.plaidapp.search.dagger
 
 import android.app.Activity
 import android.content.Context
-import com.bumptech.glide.util.ViewPreloadSizeProvider
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import io.plaidapp.R
-import io.plaidapp.core.dagger.DataManagerModule
-import io.plaidapp.core.dagger.FilterAdapterModule
-import io.plaidapp.core.dagger.OnDataLoadedModule
-import io.plaidapp.core.dagger.dribbble.DribbbleDataModule
+import io.plaidapp.core.dagger.qualifier.IsPocketInstalled
+import io.plaidapp.core.dagger.scope.FeatureScope
 import io.plaidapp.core.data.pocket.PocketUtils
-import io.plaidapp.core.dribbble.data.api.model.Shot
+import io.plaidapp.core.interfaces.SearchDataSourceFactory
+import io.plaidapp.core.interfaces.SearchDataSourceFactoryProvider
+import io.plaidapp.search.ui.SearchActivity
+import io.plaidapp.search.ui.SearchViewModel
+import io.plaidapp.search.ui.SearchViewModelFactory
+import kotlin.reflect.full.createInstance
 
-@Module(
-    includes = [
-        DataManagerModule::class,
-        DribbbleDataModule::class,
-        FilterAdapterModule::class,
-        OnDataLoadedModule::class
-    ]
-)
-object SearchModule {
-    @JvmStatic
-    @Provides
-    fun context(activity: Activity): Context = activity
+@Module
+abstract class SearchModule {
 
-    @JvmStatic
-    @Provides
-    fun columns(activity: Activity): Int = activity.resources.getInteger(R.integer.num_columns)
+    @Binds
+    abstract fun searchActivityAsAppCompatActivity(activity: SearchActivity): AppCompatActivity
 
-    @JvmStatic
-    @Provides
-    fun viewPreloadSizeProvider() = ViewPreloadSizeProvider<Shot>()
+    @Binds
+    abstract fun searchActivityAsActivity(activity: SearchActivity): Activity
 
-    @JvmStatic
-    @Provides
-    fun isPocketInstalled(activity: Activity) = PocketUtils.isPocketInstalled(activity)
+    @Binds
+    abstract fun context(activity: Activity): Context
+
+    @Module
+    companion object {
+
+        @JvmStatic
+        @Provides
+        fun columns(activity: Activity): Int = activity.resources.getInteger(R.integer.num_columns)
+
+        @IsPocketInstalled
+        @JvmStatic
+        @Provides
+        fun isPocketInstalled(activity: Activity): Boolean = PocketUtils.isPocketInstalled(activity)
+
+        @JvmStatic
+        @Provides
+        @FeatureScope
+        fun factories(activity: Activity): Set<SearchDataSourceFactory> {
+            val factories = mutableSetOf<SearchDataSourceFactory>()
+
+            searchDataSourceFactory(
+                activity,
+                "io.plaidapp.designernews.domain.search.DesignerNewsSearchDataSourceFactoryProvider"
+            )?.apply { factories.add(this) }
+
+            searchDataSourceFactory(
+                activity,
+                "io.plaidapp.dribbble.domain.search.DribbbleSearchDataSourceFactoryProvider"
+            )?.apply { factories.add(this) }
+
+            return factories
+        }
+
+        private fun searchDataSourceFactory(
+            context: Context,
+            className: String
+        ): SearchDataSourceFactory? {
+            return try {
+                val provider =
+                    Class.forName(className).kotlin.createInstance() as SearchDataSourceFactoryProvider
+                provider.getFactory(context)
+            } catch (e: ClassNotFoundException) {
+                null
+            }
+        }
+
+        @JvmStatic
+        @Provides
+        fun searchViewModel(
+            factory: SearchViewModelFactory,
+            activity: AppCompatActivity
+        ): SearchViewModel {
+            return ViewModelProvider(activity, factory).get(SearchViewModel::class.java)
+        }
+    }
 }

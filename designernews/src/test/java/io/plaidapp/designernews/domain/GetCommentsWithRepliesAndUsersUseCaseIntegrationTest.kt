@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,26 +20,23 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.plaidapp.core.data.Result
-import io.plaidapp.core.designernews.data.api.DesignerNewsService
-import io.plaidapp.core.designernews.data.comments.CommentsRemoteDataSource
-import io.plaidapp.core.designernews.data.comments.CommentsRepository
-import io.plaidapp.core.designernews.data.comments.model.CommentResponse
 import io.plaidapp.core.designernews.data.users.model.User
+import io.plaidapp.designernews.data.api.DesignerNewsService
+import io.plaidapp.designernews.data.comments.CommentsRemoteDataSource
+import io.plaidapp.designernews.data.comments.CommentsRepository
+import io.plaidapp.designernews.data.comments.model.CommentResponse
 import io.plaidapp.designernews.data.users.UserRemoteDataSource
 import io.plaidapp.designernews.data.users.UserRepository
 import io.plaidapp.designernews.errorResponseBody
 import io.plaidapp.designernews.flattendCommentsWithReplies
 import io.plaidapp.designernews.flattenedCommentsWithoutReplies
 import io.plaidapp.designernews.parentCommentResponse
-import io.plaidapp.designernews.provideCommentsWithRepliesAndUsersUseCase
-import io.plaidapp.designernews.provideCommentsWithRepliesUseCase
 import io.plaidapp.designernews.repliesResponses
 import io.plaidapp.designernews.reply1
 import io.plaidapp.designernews.reply1NoUser
 import io.plaidapp.designernews.replyResponse1
 import io.plaidapp.designernews.user1
 import io.plaidapp.designernews.user2
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -56,8 +53,8 @@ class GetCommentsWithRepliesAndUsersUseCaseIntegrationTest {
     private val dataSource = CommentsRemoteDataSource(service)
     private val commentsRepository = CommentsRepository(dataSource)
     private val userRepository = UserRepository(UserRemoteDataSource(service))
-    private val repository = provideCommentsWithRepliesAndUsersUseCase(
-        provideCommentsWithRepliesUseCase(commentsRepository),
+    private val repository: GetCommentsWithRepliesAndUsersUseCase = GetCommentsWithRepliesAndUsersUseCase(
+        GetCommentsWithRepliesUseCase(commentsRepository),
         userRepository
     )
 
@@ -84,7 +81,7 @@ class GetCommentsWithRepliesAndUsersUseCaseIntegrationTest {
             400,
             errorResponseBody
         )
-        whenever(service.getComments("11")).thenReturn(CompletableDeferred(apiResult))
+        whenever(service.getComments("11")).thenReturn(apiResult)
 
         // When getting the comments
         val result = repository(listOf(11L))
@@ -126,8 +123,7 @@ class GetCommentsWithRepliesAndUsersUseCaseIntegrationTest {
             400,
             errorResponseBody
         )
-        whenever(service.getComments("11,12"))
-            .thenReturn(CompletableDeferred(resultChildrenError))
+        whenever(service.getComments("11,12")).thenReturn(resultChildrenError)
         // Given that the user request responds with success
         withUsers(listOf(user2), "222")
 
@@ -154,7 +150,7 @@ class GetCommentsWithRepliesAndUsersUseCaseIntegrationTest {
             errorResponseBody
         )
         whenever(service.getUsers("111"))
-            .thenReturn(CompletableDeferred(userError))
+            .thenReturn(userError)
 
         // When getting the comments from the repository
         val result = repository(listOf(11L))
@@ -169,16 +165,16 @@ class GetCommentsWithRepliesAndUsersUseCaseIntegrationTest {
     // Given that the users request responds with success
     private fun withUsers(users: List<User>, ids: String) = runBlocking {
         val userResult = Response.success(users)
-        whenever(service.getUsers(ids)).thenReturn(CompletableDeferred(userResult))
+        whenever(service.getUsers(ids)).thenReturn(userResult)
     }
 
-    private fun withComments(commentResponse: CommentResponse, ids: String) {
+    private suspend fun withComments(commentResponse: CommentResponse, ids: String) {
         val resultParent = Response.success(listOf(commentResponse))
-        whenever(service.getComments(ids)).thenReturn(CompletableDeferred(resultParent))
+        whenever(service.getComments(ids)).thenReturn(resultParent)
     }
 
-    private fun withComments(commentResponse: List<CommentResponse>, ids: String) {
+    private suspend fun withComments(commentResponse: List<CommentResponse>, ids: String) {
         val resultParent = Response.success(commentResponse)
-        whenever(service.getComments(ids)).thenReturn(CompletableDeferred(resultParent))
+        whenever(service.getComments(ids)).thenReturn(resultParent)
     }
 }

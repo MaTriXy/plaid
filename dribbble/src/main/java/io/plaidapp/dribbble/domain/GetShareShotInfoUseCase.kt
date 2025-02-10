@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package io.plaidapp.dribbble.domain
 
 import android.net.Uri
-import io.plaidapp.core.dribbble.data.api.model.Shot
 import io.plaidapp.core.util.ImageUriProvider
+import io.plaidapp.dribbble.ui.shot.ShotUiModel
 import javax.inject.Inject
 
 /**
@@ -26,13 +26,13 @@ import javax.inject.Inject
  */
 class GetShareShotInfoUseCase @Inject constructor(private val imageUriProvider: ImageUriProvider) {
 
-    suspend operator fun invoke(shot: Shot): ShareShotInfo {
-        val url = shot.images.best()
-        val imageSize = shot.images.bestSize()
+    suspend operator fun invoke(shotUiModel: ShotUiModel): ShareShotInfo {
+        val url = shotUiModel.imageUrl
+        val imageSize = shotUiModel.imageSize
         val uri = imageUriProvider(url, imageSize.width, imageSize.height)
-        val text = "“${shot.title}” by ${shot.user.name}\n${shot.url}"
+        val text = "“${shotUiModel.title}” by ${shotUiModel.userName}\n${shotUiModel.url}"
         val mime = getImageMimeType(url)
-        return ShareShotInfo(uri, shot.title, text, mime)
+        return ShareShotInfo(uri, shotUiModel.title, text, mime)
     }
 
     private fun getImageMimeType(fileName: String): String {

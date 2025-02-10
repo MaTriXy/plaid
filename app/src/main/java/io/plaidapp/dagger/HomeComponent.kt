@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,30 @@
 
 package io.plaidapp.dagger
 
+import dagger.BindsInstance
 import dagger.Component
-import io.plaidapp.core.dagger.BaseComponent
+import io.plaidapp.core.dagger.BaseActivityComponent
 import io.plaidapp.core.dagger.CoreComponent
-import io.plaidapp.core.dagger.DataManagerModule
-import io.plaidapp.core.dagger.FilterAdapterModule
-import io.plaidapp.core.dagger.OnDataLoadedModule
 import io.plaidapp.core.dagger.SharedPreferencesModule
+import io.plaidapp.core.dagger.scope.FeatureScope
 import io.plaidapp.ui.HomeActivity
 
 /**
  * Dagger component for the [HomeActivity].
  */
-@Component(modules = [HomeModule::class], dependencies = [CoreComponent::class])
-interface HomeComponent : BaseComponent<HomeActivity> {
+@Component(
+        modules = [HomeModule::class, SharedPreferencesModule::class],
+        dependencies = [CoreComponent::class]
+)
+@FeatureScope
+interface HomeComponent : BaseActivityComponent<HomeActivity> {
 
     @Component.Builder
     interface Builder {
 
         fun build(): HomeComponent
+        @BindsInstance fun homeActivity(activity: HomeActivity): Builder
         fun coreComponent(module: CoreComponent): Builder
-        fun dataManagerModule(module: DataManagerModule): Builder
-        fun dataLoadedModule(module: OnDataLoadedModule): Builder
-        fun filterAdapterModule(module: FilterAdapterModule): Builder
         fun sharedPreferencesModule(module: SharedPreferencesModule): Builder
-        fun homeModule(module: HomeModule): Builder
     }
 }

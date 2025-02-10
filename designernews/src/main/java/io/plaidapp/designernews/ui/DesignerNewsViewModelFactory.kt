@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,20 +21,24 @@ import androidx.lifecycle.ViewModelProvider
 import io.plaidapp.core.data.CoroutinesDispatcherProvider
 import io.plaidapp.core.designernews.data.login.LoginRepository
 import io.plaidapp.designernews.ui.login.LoginViewModel
+import javax.inject.Inject
 
 /**
  * Factory for Designer News [ViewModel]s
  */
-class DesignerNewsViewModelFactory(
+class DesignerNewsViewModelFactory @Inject constructor(
     private val loginRepository: LoginRepository,
     private val dispatcherProvider: CoroutinesDispatcherProvider
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
-            return LoginViewModel(loginRepository, dispatcherProvider) as T
+        if (modelClass != LoginViewModel::class.java) {
+            throw IllegalArgumentException("Unknown ViewModel class")
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
+        return LoginViewModel(
+            loginRepository,
+            dispatcherProvider
+        ) as T
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,32 +18,21 @@
 
 package io.plaidapp.dagger
 
-import io.plaidapp.core.dagger.DataManagerModule
-import io.plaidapp.core.dagger.FilterAdapterModule
-import io.plaidapp.core.dagger.OnDataLoadedModule
 import io.plaidapp.core.dagger.SharedPreferencesModule
-import io.plaidapp.core.data.BaseDataManager
-import io.plaidapp.core.data.PlaidItem
 import io.plaidapp.core.designernews.data.login.LoginLocalDataSource
 import io.plaidapp.ui.HomeActivity
-import io.plaidapp.ui.PlaidApplication
+import io.plaidapp.ui.coreComponent
 
 /**
  * Injector for HomeActivity.
  */
-fun inject(
-    activity: HomeActivity,
-    dataLoadedCallback: BaseDataManager.OnDataLoadedCallback<List<PlaidItem>>
-) {
+fun inject(activity: HomeActivity) {
     DaggerHomeComponent.builder()
-        .coreComponent(PlaidApplication.coreComponent(activity))
-        .dataManagerModule(DataManagerModule())
-        .dataLoadedModule(OnDataLoadedModule(dataLoadedCallback))
-        .filterAdapterModule(FilterAdapterModule(activity))
-        .homeModule(HomeModule(activity))
+        .coreComponent(activity.coreComponent())
         .sharedPreferencesModule(
             SharedPreferencesModule(activity, LoginLocalDataSource.DESIGNER_NEWS_PREF)
         )
+        .homeActivity(activity)
         .build()
         .inject(activity)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 package io.plaidapp.core.data
 
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers.Default
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
 
 /**
  * Provide coroutines context.
@@ -25,4 +29,7 @@ data class CoroutinesDispatcherProvider(
     val main: CoroutineDispatcher,
     val computation: CoroutineDispatcher,
     val io: CoroutineDispatcher
-)
+) {
+
+    @Inject constructor() : this(Main, Default, IO)
+}

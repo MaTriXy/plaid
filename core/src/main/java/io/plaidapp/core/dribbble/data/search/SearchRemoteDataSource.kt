@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ class SearchRemoteDataSource @Inject constructor(private val service: DribbbleSe
         sortOrder: SortOrder = RECENT,
         pageSize: Int = PER_PAGE_DEFAULT
     ): Result<List<Shot>> {
-        val response = service.searchDeferred(query, page, sortOrder.sort, pageSize).await()
+        val response = service.searchDeferred(query, page, sortOrder.sort, pageSize)
         if (response.isSuccessful) {
             val body = response.body()
             if (body != null) {

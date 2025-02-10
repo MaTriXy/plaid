@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,72 +19,73 @@ package io.plaidapp.core.dagger
 import dagger.Module
 import dagger.Provides
 import io.plaidapp.core.dagger.designernews.DesignerNewsDataModule
-import io.plaidapp.core.dagger.dribbble.DribbbleDataModule
-import io.plaidapp.core.data.BaseDataManager
+import io.plaidapp.core.dagger.scope.FeatureScope
+import io.plaidapp.core.data.CoroutinesDispatcherProvider
 import io.plaidapp.core.data.DataLoadingSubject
 import io.plaidapp.core.data.DataManager
-import io.plaidapp.core.data.PlaidItem
+import io.plaidapp.core.data.prefs.SourcesRepository
 import io.plaidapp.core.designernews.domain.LoadStoriesUseCase
 import io.plaidapp.core.designernews.domain.SearchStoriesUseCase
 import io.plaidapp.core.dribbble.data.ShotsRepository
-import io.plaidapp.core.ui.FilterAdapter
+import io.plaidapp.core.producthunt.domain.LoadPostsUseCase
 
 /**
  * Module to provide [DataManager].
  */
-@Module(includes = [DribbbleDataModule::class, DesignerNewsDataModule::class])
+@Module(includes = [DesignerNewsDataModule::class, ProductHuntModule::class])
 class DataManagerModule {
 
-    private lateinit var manager: DataManager
-
     @Provides
+    @FeatureScope
     fun provideDataManager(
-        onDataLoadedCallback: BaseDataManager.OnDataLoadedCallback<List<PlaidItem>>,
-        loadStoriesUseCase: LoadStoriesUseCase,
-        searchStoriesUseCase: SearchStoriesUseCase,
+        loadStories: LoadStoriesUseCase,
+        searchStories: SearchStoriesUseCase,
+        loadPosts: LoadPostsUseCase,
         shotsRepository: ShotsRepository,
-        filterAdapter: FilterAdapter
+        sourcesRepository: SourcesRepository,
+        coroutinesDispatcherProvider: CoroutinesDispatcherProvider
     ): DataManager = getDataManager(
-        onDataLoadedCallback,
-        loadStoriesUseCase,
-        searchStoriesUseCase,
+        loadStories,
+        loadPosts,
+        searchStories,
         shotsRepository,
-        filterAdapter
+        sourcesRepository,
+        coroutinesDispatcherProvider
     )
 
     @Provides
+    @FeatureScope
     fun provideDataLoadingSubject(
-        onDataLoadedCallback: BaseDataManager.OnDataLoadedCallback<List<PlaidItem>>,
-        loadStoriesUseCase: LoadStoriesUseCase,
-        searchStoriesUseCase: SearchStoriesUseCase,
+        loadStories: LoadStoriesUseCase,
+        loadPosts: LoadPostsUseCase,
+        searchStories: SearchStoriesUseCase,
         shotsRepository: ShotsRepository,
-        filterAdapter: FilterAdapter
+        sourcesRepository: SourcesRepository,
+        coroutinesDispatcherProvider: CoroutinesDispatcherProvider
     ): DataLoadingSubject = getDataManager(
-        onDataLoadedCallback,
-        loadStoriesUseCase,
-        searchStoriesUseCase,
+        loadStories,
+        loadPosts,
+        searchStories,
         shotsRepository,
-        filterAdapter
+        sourcesRepository,
+        coroutinesDispatcherProvider
     )
 
     private fun getDataManager(
-        onDataLoadedCallback: BaseDataManager.OnDataLoadedCallback<List<PlaidItem>>,
-        loadStoriesUseCase: LoadStoriesUseCase,
-        searchStoriesUseCase: SearchStoriesUseCase,
+        loadStories: LoadStoriesUseCase,
+        loadPosts: LoadPostsUseCase,
+        searchStories: SearchStoriesUseCase,
         shotsRepository: ShotsRepository,
-        filterAdapter: FilterAdapter
+        sourcesRepository: SourcesRepository,
+        coroutinesDispatcherProvider: CoroutinesDispatcherProvider
     ): DataManager {
-        return if (::manager.isInitialized) {
-            manager
-        } else {
-            manager = DataManager(
-                onDataLoadedCallback,
-                loadStoriesUseCase,
-                searchStoriesUseCase,
-                shotsRepository,
-                filterAdapter
-            )
-            manager
-        }
+        return DataManager(
+            loadStories,
+            loadPosts,
+            searchStories,
+            shotsRepository,
+            sourcesRepository,
+            coroutinesDispatcherProvider
+        )
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,33 @@
 
 package io.plaidapp.ui
 
+import android.app.Activity
 import android.app.Application
 import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY
+import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+import androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode
+import androidx.core.os.BuildCompat
 import io.plaidapp.core.dagger.CoreComponent
 import io.plaidapp.core.dagger.DaggerCoreComponent
-import io.plaidapp.core.dagger.MarkdownModule
 
 /**
  * Io and Behold
  */
 class PlaidApplication : Application() {
 
+    override fun onCreate() {
+        super.onCreate()
+        val nightMode = if (BuildCompat.isAtLeastQ()) {
+            MODE_NIGHT_FOLLOW_SYSTEM
+        } else {
+            MODE_NIGHT_AUTO_BATTERY
+        }
+        setDefaultNightMode(nightMode)
+    }
+
     private val coreComponent: CoreComponent by lazy {
-        DaggerCoreComponent
-            .builder()
-            .markdownModule(MarkdownModule(resources.displayMetrics))
-            .build()
+        DaggerCoreComponent.create()
     }
 
     companion object {
@@ -40,3 +51,5 @@ class PlaidApplication : Application() {
             (context.applicationContext as PlaidApplication).coreComponent
     }
 }
+
+fun Activity.coreComponent() = PlaidApplication.coreComponent(this)

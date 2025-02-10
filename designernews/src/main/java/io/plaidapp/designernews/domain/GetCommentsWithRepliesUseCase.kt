@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,20 @@
 package io.plaidapp.designernews.domain
 
 import io.plaidapp.core.data.Result
-import io.plaidapp.core.designernews.data.comments.model.CommentResponse
-import io.plaidapp.core.designernews.data.comments.model.toCommentsWithReplies
-import io.plaidapp.core.designernews.data.comments.CommentsRepository
 import io.plaidapp.core.designernews.domain.model.CommentWithReplies
+import io.plaidapp.designernews.data.comments.CommentsRepository
+import io.plaidapp.designernews.data.comments.model.CommentResponse
+import io.plaidapp.designernews.data.comments.model.toCommentsWithReplies
 import java.io.IOException
+import javax.inject.Inject
 
 /**
  * Use case that constructs the entire comments and replies tree for a list of comments. Works
  * with the [CommentsRepository] to get the data.
  */
-class GetCommentsWithRepliesUseCase(private val commentsRepository: CommentsRepository) {
+class GetCommentsWithRepliesUseCase @Inject constructor(
+    private val commentsRepository: CommentsRepository
+) {
 
     /**
      * Get all comments and their replies. If we get an error on any reply depth level, ignore it

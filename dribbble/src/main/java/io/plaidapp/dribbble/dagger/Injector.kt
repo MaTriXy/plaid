@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 package io.plaidapp.dribbble.dagger
 
 import io.plaidapp.dribbble.ui.shot.ShotActivity
-import io.plaidapp.ui.PlaidApplication
+import io.plaidapp.ui.coreComponent
 
 /**
  * Inject dependencies into [ShotActivity]
  */
 fun ShotActivity.inject(shotId: Long) {
     DaggerDribbbleComponent.builder()
-        .coreComponent(PlaidApplication.coreComponent(this))
+        .coreComponent(coreComponent())
         .dribbbleModule(DribbbleModule(this, shotId))
         .build()
         .inject(this)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.plaidapp.core.data.Result
-import io.plaidapp.core.designernews.data.comments.CommentsRepository
+import io.plaidapp.designernews.data.comments.CommentsRepository
 import io.plaidapp.designernews.parentCommentResponse
 import io.plaidapp.designernews.parentCommentWithReplies
 import io.plaidapp.designernews.parentCommentWithRepliesWithoutReplies
@@ -28,12 +28,12 @@ import io.plaidapp.designernews.reply1
 import io.plaidapp.designernews.replyResponse1
 import io.plaidapp.designernews.replyResponse2
 import io.plaidapp.designernews.replyWithReplies1
+import java.io.IOException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.IOException
 
 /**
  * Tests for [GetCommentsWithRepliesUseCase] where all the dependencies are mocked.

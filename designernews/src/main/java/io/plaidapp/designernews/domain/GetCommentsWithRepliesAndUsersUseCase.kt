@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,12 @@ import io.plaidapp.core.designernews.domain.model.Comment
 import io.plaidapp.core.designernews.domain.model.CommentWithReplies
 import io.plaidapp.core.designernews.domain.model.toComment
 import io.plaidapp.designernews.data.users.UserRepository
+import javax.inject.Inject
 
 /**
  * Use case that builds [Comment]s based on comments with replies and users
  */
-class GetCommentsWithRepliesAndUsersUseCase(
+class GetCommentsWithRepliesAndUsersUseCase @Inject constructor(
     private val getCommentsWithReplies: GetCommentsWithRepliesUseCase,
     private val userRepository: UserRepository
 ) {

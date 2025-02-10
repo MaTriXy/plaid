@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,28 @@
 
 package io.plaidapp.search.dagger
 
-import android.app.Activity
 import dagger.BindsInstance
 import dagger.Component
+import io.plaidapp.core.dagger.BaseActivityComponent
 import io.plaidapp.core.dagger.CoreComponent
-import io.plaidapp.core.dagger.DataManagerModule
-import io.plaidapp.core.dagger.FilterAdapterModule
-import io.plaidapp.core.dagger.OnDataLoadedModule
-import io.plaidapp.core.dagger.SharedPreferencesModule
+import io.plaidapp.core.dagger.scope.FeatureScope
+import io.plaidapp.core.interfaces.SearchDataSourceFactory
 import io.plaidapp.search.ui.SearchActivity
 
 /**
  * Dagger component for the [SearchActivity].
  */
 @Component(modules = [SearchModule::class], dependencies = [CoreComponent::class])
-interface SearchComponent {
+@FeatureScope
+interface SearchComponent : BaseActivityComponent<SearchActivity> {
 
-    fun inject(activity: SearchActivity)
+    fun factories(): Set<SearchDataSourceFactory>
 
     @Component.Builder
     interface Builder {
 
         fun build(): SearchComponent
-        @BindsInstance fun activity(activity: Activity): Builder
-        fun coreComponent(module: CoreComponent): Builder
-        fun dataManagerModule(module: DataManagerModule): Builder
-        fun dataLoadedModule(module: OnDataLoadedModule): Builder
-        fun filterAdapterModule(module: FilterAdapterModule): Builder
-        fun sharedPreferencesModule(module: SharedPreferencesModule): Builder
-        fun searchModule(module: SearchModule): Builder
+        @BindsInstance fun searchActivity(activity: SearchActivity): Builder
+        fun coreComponent(component: CoreComponent): Builder
     }
 }

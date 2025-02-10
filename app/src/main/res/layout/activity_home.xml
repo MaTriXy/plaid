@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Copyright 2015 Google Inc.
+  Copyright 2015 Google LLC.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@
             android:scrollbarStyle="outsideOverlay"
             android:scrollbars="vertical" />
 
-        <Toolbar
+        <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             style="@style/Widget.Plaid.HomeToolbar"
             android:layout_width="match_parent"
@@ -75,28 +75,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout="@layout/no_connection" />
-
-        <ImageButton
-            android:id="@+id/fab"
-            android:layout_width="@dimen/fab_size"
-            android:layout_height="@dimen/fab_size"
-            android:layout_gravity="bottom|end"
-            android:layout_marginEnd="@dimen/padding_normal"
-            android:layout_marginBottom="@dimen/padding_normal"
-            android:background="@drawable/fab"
-            android:elevation="@dimen/z_fab"
-            android:src="@drawable/ic_add_dark"
-            android:visibility="gone"
-            android:stateListAnimator="@animator/raise" />
-
-        <ViewStub
-            android:id="@+id/stub_posting_progress"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_marginEnd="@dimen/padding_normal"
-            android:layout_marginBottom="@dimen/padding_normal"
-            android:layout="@layout/posting_progress" />
 
     </FrameLayout>
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Copyright 2015 Google Inc.
+  Copyright 2015 Google LLC.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        app:hintTextAppearance="@style/TextAppearance.FloatLabelHint">
+        style="@style/Widget.Plaid.TextEntry">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/comment"

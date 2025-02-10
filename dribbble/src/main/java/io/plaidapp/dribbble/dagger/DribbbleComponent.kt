@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package io.plaidapp.dribbble.dagger
 
 import dagger.Component
-import io.plaidapp.core.dagger.BaseComponent
+import io.plaidapp.core.dagger.BaseActivityComponent
 import io.plaidapp.core.dagger.CoreComponent
 import io.plaidapp.core.dagger.dribbble.DribbbleDataModule
+import io.plaidapp.core.dagger.scope.FeatureScope
 import io.plaidapp.dribbble.ui.shot.ShotActivity
 
 /**
@@ -29,7 +30,8 @@ import io.plaidapp.dribbble.ui.shot.ShotActivity
     modules = [DribbbleModule::class, DribbbleDataModule::class],
     dependencies = [CoreComponent::class]
 )
-interface DribbbleComponent : BaseComponent<ShotActivity> {
+@FeatureScope
+interface DribbbleComponent : BaseActivityComponent<ShotActivity> {
 
     @Component.Builder
     interface Builder {

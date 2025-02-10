@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,26 @@
 
 package io.plaidapp.core.dagger
 
+import com.google.gson.Gson
 import dagger.Component
-import io.plaidapp.core.dagger.designernews.DesignerNewsDataModule
-import io.plaidapp.core.dagger.dribbble.DribbbleDataModule
+import javax.inject.Singleton
+import okhttp3.OkHttpClient
+import retrofit2.converter.gson.GsonConverterFactory
 
 /**
  * Component providing application wide singletons.
- * To call this make use of PlaidApplication.coreComponent.
+ * To call this make use of PlaidApplication.coreComponent or the
+ * Activity.coreComponent extension function.
  */
-@Component(
-    modules = [
-        DribbbleDataModule::class,
-        DesignerNewsDataModule::class,
-        MarkdownModule::class,
-        SharedPreferencesModule::class
-    ]
-)
+@Component(modules = [CoreDataModule::class])
+@Singleton
 interface CoreComponent {
 
     @Component.Builder interface Builder {
         fun build(): CoreComponent
-        fun markdownModule(module: MarkdownModule): Builder
-        fun sharedPreferencesModuleModule(module: SharedPreferencesModule): Builder
     }
+
+    fun provideOkHttpClient(): OkHttpClient
+    fun provideGson(): Gson
+    fun provideGsonConverterFactory(): GsonConverterFactory
 }

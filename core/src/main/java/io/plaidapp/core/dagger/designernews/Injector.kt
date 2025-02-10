@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google, Inc.
+ * Copyright 2018 Google LLC.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,26 @@
 
 package io.plaidapp.core.dagger.designernews
 
-import io.plaidapp.core.dagger.CoreDataModule
-import io.plaidapp.core.dagger.CoroutinesDispatcherProviderModule
+import io.plaidapp.core.dagger.CoreComponent
+import io.plaidapp.core.dagger.DaggerCoreComponent
 import io.plaidapp.core.dagger.SharedPreferencesModule
-import io.plaidapp.core.designernews.data.api.DesignerNewsService
 import io.plaidapp.core.designernews.data.login.LoginLocalDataSource
 import io.plaidapp.core.designernews.data.votes.UpvoteStoryService
-import retrofit2.converter.gson.GsonConverterFactory
 
 /**
  * Injector for [UpvoteStoryService].
  */
 
+private val coreComponent: CoreComponent by lazy {
+    DaggerCoreComponent
+        .builder()
+        .build()
+}
+
 fun inject(service: UpvoteStoryService) {
-    val coreDataModule =
-            CoreDataModule(DesignerNewsService.ENDPOINT, GsonConverterFactory.create())
 
     DaggerUpvoteStoryServiceComponent.builder()
-            .coroutinesDispatcherProviderModule(CoroutinesDispatcherProviderModule())
-            .coreDataModule(coreDataModule)
+            .coreComponent(coreComponent)
             .sharedPreferencesModule(
                     SharedPreferencesModule(service, LoginLocalDataSource.DESIGNER_NEWS_PREF)
             )
